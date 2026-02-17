@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "disentangle.fullname" . }}-headless
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "disentangle.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: p2p
+    port: {{ .Values.nodes.p2pPort }}
+    targetPort: p2p
+    protocol: TCP
+  - name: rpc
+    port: {{ .Values.nodes.rpcPort }}
+    targetPort: rpc
+    protocol: TCP

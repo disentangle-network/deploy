@@ -1,0 +1,69 @@
+{{- if .Values.traffic.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "disentangle.fullname" . }}-txgen
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+    app.kubernetes.io/component: txgen
+spec:
+  schedule: {{ .Values.traffic.interval | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        {{- include "disentangle.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: txgen
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "disentangle.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: txgen
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+          - name: txgen
+            image: alpine/curl:latest
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              {{- toYaml .Values.securityContext | nindent 14 }}
+            command:
+              - /bin/sh
+              - -c
+              - |
+                RPC_URL="http://{{ include "disentangle.fullname" . }}-rpc:{{ .Values.rpcService.port }}"
+                echo "Generating {{ .Values.traffic.txCount }} transactions to $RPC_URL"
+
+                # Verify node is alive
+                echo "Checking node status..."
+                STATUS=$(curl -sf "$RPC_URL/status") || { echo "FATAL: node not reachable"; exit 1; }
+                DAG_SIZE=$(echo "$STATUS" | grep -o '"dag_size":[0-9]*' | cut -d: -f2)
+                TIPS=$(echo "$STATUS" | grep -o '"tips":\[[^]]*\]')
+                echo "  dag_size=$DAG_SIZE tips=$TIPS"
+
+                # NOTE: /status returns truncated tip hashes (8 bytes). The /transaction
+                # endpoint requires full 32-byte parent hashes. Until the API exposes full
+                # tip hashes, we submit with empty parents (creates root transactions).
+                # This still exercises the full submission pipeline: PoW, SimHash,
+                # Dilithium signing, gossip broadcast.
+
+                for i in $(seq 1 {{ .Values.traffic.txCount }}); do
+                  PAYLOAD="{\"sender\":\"txgen-$HOSTNAME-$i\",\"parents\":[],\"data\":\"txgen-$(date +%s)-$i\"}"
+
+                  echo "Submitting transaction $i..."
+                  RESPONSE=$(curl -sf -X POST \
+                    -H "Content-Type: application/json" \
+                    -d "$PAYLOAD" \
+                    "$RPC_URL/transaction") || { echo "Transaction $i failed"; continue; }
+
+                  echo "  $RESPONSE"
+                  sleep 1
+                done
+
+                echo "Transaction generation complete"
+{{- end }}

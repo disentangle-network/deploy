@@ -1,0 +1,119 @@
+suite: Headless Service tests
+templates:
+  - templates/service-headless.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should create headless service with default values
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: test-release-disentangle-headless
+
+  - it: should have ClusterIP set to None for headless service
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.clusterIP
+          value: None
+
+  - it: should include both p2p and rpc ports
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: p2p
+            port: 9000
+            targetPort: p2p
+            protocol: TCP
+      - contains:
+          path: spec.ports
+          content:
+            name: rpc
+            port: 8000
+            targetPort: rpc
+            protocol: TCP
+
+  - it: should use custom p2p port
+    set:
+      nodes.p2pPort: 9999
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: p2p
+            port: 9999
+            targetPort: p2p
+            protocol: TCP
+
+  - it: should use custom rpc port
+    set:
+      nodes.rpcPort: 7777
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: rpc
+            port: 7777
+            targetPort: rpc
+            protocol: TCP
+
+  - it: should use custom ports for both p2p and rpc
+    set:
+      nodes.p2pPort: 9999
+      nodes.rpcPort: 7777
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: p2p
+            port: 9999
+            targetPort: p2p
+            protocol: TCP
+      - contains:
+          path: spec.ports
+          content:
+            name: rpc
+            port: 7777
+            targetPort: rpc
+            protocol: TCP
+
+  - it: should have correct selector labels
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: test-release
+
+  - it: should have correct metadata labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should match service name pattern
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: -headless$
+
+  - it: should have exactly 2 ports defined
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 2

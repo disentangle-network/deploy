@@ -1,0 +1,384 @@
+---
+# Source: disentangle/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: golden-test-disentangle
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: disentangle/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: golden-test-disentangle-config
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  cluster-config.yaml: |
+    consensus:
+      bootstrap_start: 1000
+      bootstrap_end: 6000
+      confirmation_depth: 6
+      curvature_method: jaccard
+      fixed_point_scale: 65536
+
+    pow:
+      difficulty: 16
+      mine_interval_secs: 10
+
+    network:
+      node_count: 10
+      p2p_port: 9000
+      rpc_port: 8000
+---
+# Source: disentangle/templates/service-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: golden-test-disentangle-headless
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+  ports:
+  - name: p2p
+    port: 9000
+    targetPort: p2p
+    protocol: TCP
+  - name: rpc
+    port: 8000
+    targetPort: rpc
+    protocol: TCP
+---
+# Source: disentangle/templates/service-rpc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: golden-test-disentangle-rpc
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+  ports:
+  - name: rpc
+    port: 8000
+    targetPort: rpc
+    protocol: TCP
+---
+# Source: disentangle/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: golden-test-disentangle
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  serviceName: golden-test-disentangle-headless
+  replicas: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: disentangle
+      app.kubernetes.io/instance: golden-test
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: disentangle
+        app.kubernetes.io/instance: golden-test
+    spec:
+      serviceAccountName: golden-test-disentangle
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: disentangle-node
+        image: ghcr.io/disentangle-network/disentangle-node:0.3.0
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+        command:
+          - /bin/sh
+          - -c
+          - |
+            ORDINAL=${HOSTNAME##*-}
+            if [ "$ORDINAL" = "0" ]; then
+              # Bootstrap node (node-0) - no bootstrap peer
+              exec disentangle-node 9000 8000
+            else
+              # Follower nodes - connect to node-0
+              BOOTSTRAP="golden-test-disentangle-0.golden-test-disentangle-headless.default.svc.cluster.local"
+              exec disentangle-node 9000 8000 /dns4/${BOOTSTRAP}/tcp/9000
+            fi
+        ports:
+        - name: p2p
+          containerPort: 9000
+          protocol: TCP
+        - name: rpc
+          containerPort: 8000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: rpc
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: rpc
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        workingDir: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+# Source: disentangle/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: golden-test-disentangle-test-connection
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+  - name: test-connection
+    image: alpine/curl:latest
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        echo "=== Disentangle Connection Test ==="
+
+        RPC_SVC="golden-test-disentangle-rpc"
+        RPC_PORT="8000"
+        NODE_COUNT=10
+        HEADLESS_SVC="golden-test-disentangle-headless"
+        NAMESPACE="default"
+
+        echo ""
+        echo "--- Test 1: RPC service reachable ---"
+        STATUS=$(curl -sf "http://${RPC_SVC}:${RPC_PORT}/status")
+        if [ -z "$STATUS" ]; then
+          echo "FAIL: RPC service not responding"
+          exit 1
+        fi
+        echo "PASS: RPC service responding"
+        echo "Response: $(echo "$STATUS" | head -c 200)"
+
+        echo ""
+        echo "--- Test 2: Individual node health ---"
+        FAILURES=0
+        for i in $(seq 0 $((NODE_COUNT - 1))); do
+          POD_DNS="golden-test-disentangle-${i}.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local"
+          if curl -sf "http://${POD_DNS}:${RPC_PORT}/status" > /dev/null 2>&1; then
+            echo "  Node $i: OK"
+          else
+            echo "  Node $i: FAIL"
+            FAILURES=$((FAILURES + 1))
+          fi
+        done
+
+        if [ "$FAILURES" -gt 0 ]; then
+          echo "FAIL: $FAILURES node(s) not responding"
+          exit 1
+        fi
+        echo "PASS: All $NODE_COUNT nodes healthy"
+
+        echo ""
+        echo "=== Connection test passed ==="
+---
+# Source: disentangle/templates/tests/test-genesis-sync.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: golden-test-disentangle-test-genesis
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+  - name: test-genesis
+    image: alpine/curl:latest
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        apk add --no-cache jq > /dev/null 2>&1
+
+        echo "=== Disentangle Genesis Sync Test ==="
+
+        NODE_COUNT=10
+        HEADLESS_SVC="golden-test-disentangle-headless"
+        NAMESPACE="default"
+        RPC_PORT="8000"
+
+        echo ""
+        echo "--- Test 1: All nodes have non-empty DAG ---"
+        FAILURES=0
+        for i in $(seq 0 $((NODE_COUNT - 1))); do
+          POD_DNS="golden-test-disentangle-${i}.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local"
+          DAG_SIZE=$(curl -sf "http://${POD_DNS}:${RPC_PORT}/status" | jq -r '.dag_size // 0')
+          echo "  Node $i: DAG size = $DAG_SIZE"
+          if [ "$DAG_SIZE" -lt 1 ]; then
+            echo "  FAIL: Node $i has empty DAG"
+            FAILURES=$((FAILURES + 1))
+          fi
+        done
+
+        if [ "$FAILURES" -gt 0 ]; then
+          echo "FAIL: $FAILURES node(s) have empty DAGs"
+          exit 1
+        fi
+        echo "PASS: All nodes have non-empty DAGs"
+
+        echo ""
+        echo "--- Test 2: Nodes share common genesis ---"
+        GENESIS_0=$(curl -sf "http://golden-test-disentangle-0.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local:${RPC_PORT}/status" | jq -r '.tips[0] // empty')
+
+        if [ -z "$GENESIS_0" ]; then
+          echo "WARN: Bootstrap node has no tips (network may be too young)"
+        else
+          echo "  Bootstrap genesis tip: $GENESIS_0"
+        fi
+
+        echo ""
+        echo "--- Test 3: Peer connectivity ---"
+        for i in $(seq 0 $((NODE_COUNT - 1))); do
+          POD_DNS="golden-test-disentangle-${i}.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local"
+          PEER_COUNT=$(curl -sf "http://${POD_DNS}:${RPC_PORT}/status" | jq -r '.peer_count // 0')
+          echo "  Node $i: $PEER_COUNT peer(s)"
+        done
+
+        echo ""
+        echo "=== Genesis sync test passed ==="
+---
+# Source: disentangle/templates/tests/test-rpc-api.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: golden-test-disentangle-test-rpc
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+  - name: test-rpc
+    image: alpine/curl:latest
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        apk add --no-cache jq > /dev/null 2>&1
+
+        echo "=== Disentangle RPC API Test ==="
+
+        RPC_URL="http://golden-test-disentangle-rpc:8000"
+
+        echo ""
+        echo "--- Test 1: GET /status ---"
+        STATUS=$(curl -sf "$RPC_URL/status")
+        echo "$STATUS" | jq -e '.peer_id' > /dev/null
+        echo "$STATUS" | jq -e '.dag_size' > /dev/null
+        echo "PASS: /status returns valid JSON with peer_id and dag_size"
+
+        echo ""
+        echo "--- Test 2: GET /graph ---"
+        GRAPH=$(curl -sf "$RPC_URL/graph")
+        echo "$GRAPH" | jq -e '.nodes' > /dev/null
+        echo "$GRAPH" | jq -e '.edges' > /dev/null
+        echo "PASS: /graph returns valid JSON with nodes and edges"
+
+        echo ""
+        echo "--- Test 3: Status fields valid ---"
+        PEER_ID=$(echo "$STATUS" | jq -r '.peer_id')
+        DAG_SIZE=$(echo "$STATUS" | jq -r '.dag_size')
+        echo "  peer_id: $PEER_ID"
+        echo "  dag_size: $DAG_SIZE"
+
+        if [ -z "$PEER_ID" ] || [ "$PEER_ID" = "null" ]; then
+          echo "FAIL: peer_id is empty"
+          exit 1
+        fi
+        echo "PASS: All status fields valid"
+
+        echo ""
+        echo "=== RPC API test passed ==="

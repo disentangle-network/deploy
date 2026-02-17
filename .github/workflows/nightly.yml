@@ -1,0 +1,100 @@
+name: Nightly Regression
+
+on:
+  schedule:
+    - cron: '0 4 * * *'  # 4 AM UTC daily
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  golden-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+      - name: Run golden file tests
+        run: ./tests/golden/verify.sh
+
+  policy-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+      - name: Install conftest
+        run: |
+          curl -sL https://github.com/open-policy-agent/conftest/releases/download/v0.52.0/conftest_0.52.0_Linux_x86_64.tar.gz | \
+            tar xz -C /usr/local/bin
+      - name: Run policy tests
+        run: ./tests/policies/run-conftest.sh
+
+  helm-unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+      - name: Install helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest
+      - name: Run unit tests
+        run: helm unittest helm/disentangle/
+
+  kube-score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+      - name: Install kube-score
+        run: |
+          curl -sL https://github.com/zegl/kube-score/releases/download/v1.18.0/kube-score_1.18.0_linux_amd64.tar.gz | \
+            tar xz -C /usr/local/bin kube-score
+      - name: Score manifests
+        run: |
+          helm template score-test helm/disentangle/ | \
+            kube-score score - \
+              --ignore-test container-ephemeral-storage-request-and-limit \
+              --ignore-test pod-networkpolicy \
+              --ignore-test networkpolicy-targets-pod \
+              || true  # Report but don't fail (informational)
+
+  kube-linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+      - name: Install kube-linter
+        run: |
+          curl -sL https://github.com/stackrox/kube-linter/releases/download/v0.6.8/kube-linter-linux.tar.gz | \
+            tar xz -C /usr/local/bin
+      - name: Lint manifests
+        run: |
+          helm template lint-test helm/disentangle/ | kube-linter lint -
+
+  multi-k8s-version:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s-version: ['1.27.0', '1.28.0', '1.29.0', '1.30.0']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/download/v0.6.4/kubeconform-linux-amd64.tar.gz | \
+            tar xz -C /usr/local/bin
+      - name: Validate against K8s ${{ matrix.k8s-version }}
+        run: |
+          helm template test helm/disentangle/ | \
+            kubeconform -strict -summary \
+              -ignore-missing-schemas \
+              -kubernetes-version ${{ matrix.k8s-version }}

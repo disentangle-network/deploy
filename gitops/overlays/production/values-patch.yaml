@@ -1,0 +1,26 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: disentangle
+  namespace: disentangle
+spec:
+  values:
+    nodes:
+      count: 7
+    traffic:
+      enabled: false
+    persistence:
+      enabled: true
+      size: 10Gi
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    pow:
+      difficulty: 20
+      mineIntervalSecs: 15
+    consensus:
+      confirmationDepth: 10

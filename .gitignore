@@ -1,1 +1,33 @@
+# OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Helm
+helm/disentangle/charts/
+*.tgz
+.helm/
+helm-plugins/
+tmp/
+out/
+rendered/
+
+# Cluster settings (may contain secrets)
+gitops/cluster-settings-disentangle.yaml
+
+# Test artifacts
+tests/*.log
+tests/*.tmp
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Runtime
+.agentful/

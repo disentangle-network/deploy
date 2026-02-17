@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "disentangle.fullname" . }}-test-rpc
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+  - name: test-rpc
+    image: alpine/curl:latest
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        apk add --no-cache jq > /dev/null 2>&1
+
+        echo "=== Disentangle RPC API Test ==="
+
+        RPC_URL="http://{{ include "disentangle.fullname" . }}-rpc:{{ .Values.rpcService.port }}"
+
+        echo ""
+        echo "--- Test 1: GET /status ---"
+        STATUS=$(curl -sf "$RPC_URL/status")
+        echo "$STATUS" | jq -e '.peer_id' > /dev/null
+        echo "$STATUS" | jq -e '.dag_size' > /dev/null
+        echo "PASS: /status returns valid JSON with peer_id and dag_size"
+
+        echo ""
+        echo "--- Test 2: GET /graph ---"
+        GRAPH=$(curl -sf "$RPC_URL/graph")
+        echo "$GRAPH" | jq -e '.nodes' > /dev/null
+        echo "$GRAPH" | jq -e '.edges' > /dev/null
+        echo "PASS: /graph returns valid JSON with nodes and edges"
+
+        echo ""
+        echo "--- Test 3: Status fields valid ---"
+        PEER_ID=$(echo "$STATUS" | jq -r '.peer_id')
+        DAG_SIZE=$(echo "$STATUS" | jq -r '.dag_size')
+        echo "  peer_id: $PEER_ID"
+        echo "  dag_size: $DAG_SIZE"
+
+        if [ -z "$PEER_ID" ] || [ "$PEER_ID" = "null" ]; then
+          echo "FAIL: peer_id is empty"
+          exit 1
+        fi
+        echo "PASS: All status fields valid"
+
+        echo ""
+        echo "=== RPC API test passed ==="

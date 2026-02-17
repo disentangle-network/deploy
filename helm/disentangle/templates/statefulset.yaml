@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "disentangle.fullname" . }}
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "disentangle.fullname" . }}-headless
+  replicas: {{ .Values.nodes.count }}
+  selector:
+    matchLabels:
+      {{- include "disentangle.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "disentangle.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "disentangle.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: disentangle-node
+        image: {{ include "disentangle.image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        command:
+          - /bin/sh
+          - -c
+          - |
+            ORDINAL=${HOSTNAME##*-}
+            if [ "$ORDINAL" = "0" ]; then
+              # Bootstrap node (node-0) - no bootstrap peer
+              exec disentangle-node {{ .Values.nodes.p2pPort }} {{ .Values.nodes.rpcPort }}
+            else
+              # Follower nodes - connect to node-0
+              BOOTSTRAP="{{ include "disentangle.fullname" . }}-0.{{ include "disentangle.fullname" . }}-headless.{{ .Release.Namespace }}.svc.cluster.local"
+              exec disentangle-node {{ .Values.nodes.p2pPort }} {{ .Values.nodes.rpcPort }} /dns4/${BOOTSTRAP}/tcp/{{ .Values.nodes.p2pPort }}
+            fi
+        ports:
+        - name: p2p
+          containerPort: {{ .Values.nodes.p2pPort }}
+          protocol: TCP
+        - name: rpc
+          containerPort: {{ .Values.nodes.rpcPort }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: rpc
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: rpc
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        workingDir: /data
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if not .Values.persistence.enabled }}
+      volumes:
+      - name: data
+        emptyDir: {}
+      {{- end }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      {{- if .Values.persistence.storageClass }}
+      storageClassName: {{ .Values.persistence.storageClass }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.persistence.size }}
+  {{- end }}

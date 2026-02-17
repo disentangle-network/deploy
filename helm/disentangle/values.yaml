@@ -1,0 +1,96 @@
+# Default values for disentangle.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: ghcr.io/disentangle-network/disentangle-node
+  tag: ""  # defaults to appVersion from Chart.yaml
+  pullPolicy: IfNotPresent
+
+# Network configuration
+nodes:
+  count: 5           # Number of nodes in the network
+  p2pPort: 9000     # P2P communication port
+  rpcPort: 8000     # HTTP RPC port
+
+# Persistent storage for node state
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClass: ""   # Use default storage class
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Service account configuration
+serviceAccount:
+  create: true
+  name: ""
+
+# RPC service configuration
+rpcService:
+  type: ClusterIP
+  port: 8000
+
+# Ingress configuration for external RPC access
+ingress:
+  enabled: false
+  className: ""
+  hosts: []
+    # - host: disentangle.example.com
+    #   paths:
+    #     - path: /
+    #       pathType: Prefix
+  tls: []
+    # - secretName: disentangle-tls
+    #   hosts:
+    #     - disentangle.example.com
+
+# Transaction generator for testing
+traffic:
+  enabled: false
+  interval: "*/5 * * * *"  # Cron schedule (every 5 minutes)
+  txCount: 10              # Number of transactions per run
+
+# Dashboard (future enhancement)
+dashboard:
+  enabled: false
+
+# Consensus protocol parameters
+consensus:
+  bootstrapStart: 1000
+  bootstrapEnd: 6000
+  confirmationDepth: 6
+  curvatureMethod: jaccard
+  fixedPointScale: 65536
+
+# Proof-of-Work parameters
+pow:
+  difficulty: 16
+  mineIntervalSecs: 10
+
+# Pod-level security context
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level security context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: false  # needs to write state file
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Node scheduling
+nodeSelector: {}
+tolerations: []
+affinity: {}

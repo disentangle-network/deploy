@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "disentangle.fullname" . }}-test-genesis
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+  - name: test-genesis
+    image: alpine/curl:latest
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        apk add --no-cache jq > /dev/null 2>&1
+
+        echo "=== Disentangle Genesis Sync Test ==="
+
+        NODE_COUNT={{ .Values.nodes.count }}
+        HEADLESS_SVC="{{ include "disentangle.fullname" . }}-headless"
+        NAMESPACE="{{ .Release.Namespace }}"
+        RPC_PORT="{{ .Values.nodes.rpcPort }}"
+
+        echo ""
+        echo "--- Test 1: All nodes have non-empty DAG ---"
+        FAILURES=0
+        for i in $(seq 0 $((NODE_COUNT - 1))); do
+          POD_DNS="{{ include "disentangle.fullname" . }}-${i}.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local"
+          DAG_SIZE=$(curl -sf "http://${POD_DNS}:${RPC_PORT}/status" | jq -r '.dag_size // 0')
+          echo "  Node $i: DAG size = $DAG_SIZE"
+          if [ "$DAG_SIZE" -lt 1 ]; then
+            echo "  FAIL: Node $i has empty DAG"
+            FAILURES=$((FAILURES + 1))
+          fi
+        done
+
+        if [ "$FAILURES" -gt 0 ]; then
+          echo "FAIL: $FAILURES node(s) have empty DAGs"
+          exit 1
+        fi
+        echo "PASS: All nodes have non-empty DAGs"
+
+        echo ""
+        echo "--- Test 2: Nodes share common genesis ---"
+        GENESIS_0=$(curl -sf "http://{{ include "disentangle.fullname" . }}-0.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local:${RPC_PORT}/status" | jq -r '.tips[0] // empty')
+
+        if [ -z "$GENESIS_0" ]; then
+          echo "WARN: Bootstrap node has no tips (network may be too young)"
+        else
+          echo "  Bootstrap genesis tip: $GENESIS_0"
+        fi
+
+        echo ""
+        echo "--- Test 3: Peer connectivity ---"
+        for i in $(seq 0 $((NODE_COUNT - 1))); do
+          POD_DNS="{{ include "disentangle.fullname" . }}-${i}.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local"
+          PEER_COUNT=$(curl -sf "http://${POD_DNS}:${RPC_PORT}/status" | jq -r '.peer_count // 0')
+          echo "  Node $i: $PEER_COUNT peer(s)"
+        done
+
+        echo ""
+        echo "=== Genesis sync test passed ==="

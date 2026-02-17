@@ -1,0 +1,212 @@
+suite: CronJob txgen tests
+templates:
+  - templates/cronjob-txgen.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should not render by default when traffic disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when traffic.enabled is false
+    set:
+      traffic.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render when traffic.enabled is true
+    set:
+      traffic.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: CronJob
+
+  - it: should have correct name with txgen suffix
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-release-disentangle-txgen
+
+  - it: should use default schedule
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.schedule
+          value: "*/5 * * * *"
+
+  - it: should use custom schedule
+    set:
+      traffic.enabled: true
+      traffic.interval: "*/10 * * * *"
+    asserts:
+      - equal:
+          path: spec.schedule
+          value: "*/10 * * * *"
+
+  - it: should set concurrencyPolicy to Forbid
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.concurrencyPolicy
+          value: Forbid
+
+  - it: should set job history limits
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.successfulJobsHistoryLimit
+          value: 3
+      - equal:
+          path: spec.failedJobsHistoryLimit
+          value: 3
+
+  - it: should include default txCount in command
+    set:
+      traffic.enabled: true
+    asserts:
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: 'Generating 10 transactions'
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: 'for i in \$\(seq 1 10\)'
+
+  - it: should include custom txCount in command
+    set:
+      traffic.enabled: true
+      traffic.txCount: 50
+    asserts:
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: 'Generating 50 transactions'
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: 'for i in \$\(seq 1 50\)'
+
+  - it: should point RPC URL to correct service
+    set:
+      traffic.enabled: true
+    asserts:
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: 'RPC_URL="http://test-release-disentangle-rpc:8000"'
+
+  - it: should use custom RPC service port
+    set:
+      traffic.enabled: true
+      rpcService.port: 7777
+    asserts:
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: 'RPC_URL="http://test-release-disentangle-rpc:7777"'
+
+  - it: should use alpine/curl image
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].image
+          value: alpine/curl:latest
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+
+  - it: should set restartPolicy to OnFailure
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.restartPolicy
+          value: OnFailure
+
+  - it: should apply pod security context
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+
+  - it: should apply container security context
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - contains:
+          path: spec.jobTemplate.spec.template.spec.containers[0].securityContext.capabilities.drop
+          content: ALL
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: false
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].securityContext.runAsUser
+          value: 1000
+
+  - it: should have correct metadata labels with component txgen
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: txgen
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should have txgen component label on job template
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.metadata.labels["app.kubernetes.io/component"]
+          value: txgen
+
+  - it: should have txgen component label on pod template
+    set:
+      traffic.enabled: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: txgen
+
+  - it: should POST to /transaction endpoint
+    set:
+      traffic.enabled: true
+    asserts:
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: '\$RPC_URL/transaction'
+
+  - it: should have valid CronJob structure
+    set:
+      traffic.enabled: true
+    asserts:
+      - isKind:
+          of: CronJob
+      - equal:
+          path: apiVersion
+          value: batch/v1

@@ -1,0 +1,142 @@
+suite: ConfigMap tests
+templates:
+  - templates/configmap.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should create ConfigMap with default values
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: test-release-disentangle-config
+
+  - it: should contain cluster-config.yaml key
+    asserts:
+      - isNotNull:
+          path: data["cluster-config.yaml"]
+
+  - it: should render default consensus values
+    asserts:
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'bootstrap_start: 1000'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'bootstrap_end: 6000'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'confirmation_depth: 6'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'curvature_method: jaccard'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'fixed_point_scale: 65536'
+
+  - it: should render custom consensus values
+    set:
+      consensus.bootstrapStart: 2000
+      consensus.bootstrapEnd: 8000
+      consensus.confirmationDepth: 12
+      consensus.curvatureMethod: jaccard
+      consensus.fixedPointScale: 32768
+    asserts:
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'bootstrap_start: 2000'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'bootstrap_end: 8000'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'confirmation_depth: 12'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'curvature_method: jaccard'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'fixed_point_scale: 32768'
+
+  - it: should render default PoW config
+    asserts:
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'difficulty: 16'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'mine_interval_secs: 10'
+
+  - it: should render custom PoW config
+    set:
+      pow.difficulty: 20
+      pow.mineIntervalSecs: 15
+    asserts:
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'difficulty: 20'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'mine_interval_secs: 15'
+
+  - it: should render default network config
+    asserts:
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'node_count: 5'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'p2p_port: 9000'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'rpc_port: 8000'
+
+  - it: should render custom network config
+    set:
+      nodes.count: 10
+      nodes.p2pPort: 9999
+      nodes.rpcPort: 7777
+    asserts:
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'node_count: 10'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'p2p_port: 9999'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'rpc_port: 7777'
+
+  - it: should have correct metadata labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should match configmap name pattern
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: -config$
+
+  - it: should contain all three config sections
+    asserts:
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'consensus:'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'pow:'
+      - matchRegex:
+          path: data["cluster-config.yaml"]
+          pattern: 'network:'

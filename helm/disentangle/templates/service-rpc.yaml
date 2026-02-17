@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "disentangle.fullname" . }}-rpc
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.rpcService.type }}
+  selector:
+    {{- include "disentangle.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: rpc
+    port: {{ .Values.rpcService.port }}
+    targetPort: rpc
+    protocol: TCP

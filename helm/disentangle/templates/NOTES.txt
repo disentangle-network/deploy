@@ -1,0 +1,45 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your Disentangle Protocol network has been deployed with {{ .Values.nodes.count }} nodes.
+
+Network Details:
+- Bootstrap Node: {{ include "disentangle.fullname" . }}-0
+- Node Count: {{ .Values.nodes.count }}
+- P2P Port: {{ .Values.nodes.p2pPort }}
+- RPC Port: {{ .Values.nodes.rpcPort }}
+
+To access the RPC endpoints:
+
+1. Port-forward the RPC service:
+
+   kubectl port-forward svc/{{ include "disentangle.fullname" . }}-rpc {{ .Values.rpcService.port }}:{{ .Values.rpcService.port }}
+
+2. Test the network:
+
+   curl http://localhost:{{ .Values.rpcService.port }}/status
+   curl http://localhost:{{ .Values.rpcService.port }}/graph
+
+3. Monitor node logs:
+
+   kubectl logs -f {{ include "disentangle.fullname" . }}-0
+
+{{- if .Values.traffic.enabled }}
+
+Transaction Generator is ENABLED:
+- Schedule: {{ .Values.traffic.interval }}
+- Transactions per run: {{ .Values.traffic.txCount }}
+
+View transaction generator logs:
+   kubectl logs -l app.kubernetes.io/component=txgen
+{{- end }}
+
+{{- if .Values.ingress.enabled }}
+
+Ingress is ENABLED:
+{{- range .Values.ingress.hosts }}
+- http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- end }}
+
+For more information, see the chart README:
+   cat README.md

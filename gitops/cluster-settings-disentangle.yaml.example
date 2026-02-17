@@ -1,0 +1,28 @@
+# Disentangle Cluster Settings
+# Copy to cluster-settings-disentangle.yaml and adjust for your environment.
+#
+# These values are substituted into HelmRelease via FluxCD postBuild.
+# See: https://fluxcd.io/flux/components/kustomize/kustomizations/#post-build-variable-substitution
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-settings-disentangle
+  namespace: flux-system
+data:
+  # Network identity
+  CLUSTER_NAME: "disentangle-testnet"
+  NETWORK_VERSION: "0.3.0"
+
+  # Image configuration
+  IMAGE_REGISTRY: "ghcr.io"
+  IMAGE_REPOSITORY: "disentangle-network/disentangle-node"
+  IMAGE_TAG: "0.3.0"
+
+  # Storage
+  STORAGE_CLASS: ""  # Use cluster default
+  STORAGE_SIZE: "1Gi"
+
+  # Ingress
+  INGRESS_CLASS: "nginx"
+  DOMAIN: "disentangle.example.com"

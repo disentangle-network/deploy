@@ -1,0 +1,25 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: disentangle
+  namespace: disentangle
+spec:
+  values:
+    nodes:
+      count: 3
+    traffic:
+      enabled: true
+      interval: "*/2 * * * *"
+      txCount: 5
+    dashboard:
+      enabled: true
+    resources:
+      limits:
+        cpu: 250m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+    pow:
+      difficulty: 8
+      mineIntervalSecs: 5

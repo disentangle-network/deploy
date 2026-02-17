@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "schedule:weekly"],
+  "packageRules": [
+    {
+      "matchManagers": ["helm-values"],
+      "matchPackagePatterns": ["disentangle.*"],
+      "automerge": false,
+      "labels": ["disentangle-update"]
+    },
+    {
+      "matchManagers": ["helmv3"],
+      "groupName": "helm-chart-dependencies",
+      "automerge": true,
+      "matchUpdateTypes": ["minor", "patch"],
+      "labels": ["helm-deps"]
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "matchPackagePatterns": ["rust"],
+      "groupName": "rust-toolchain",
+      "automerge": true,
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "matchUpdateTypes": ["minor", "patch"],
+      "labels": ["ci-update"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  }
+}

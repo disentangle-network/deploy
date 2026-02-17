@@ -1,0 +1,99 @@
+suite: RPC Service tests
+templates:
+  - templates/service-rpc.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should create RPC service with default values
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: test-release-disentangle-rpc
+
+  - it: should have default type ClusterIP
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+
+  - it: should support LoadBalancer type
+    set:
+      rpcService.type: LoadBalancer
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: should support NodePort type
+    set:
+      rpcService.type: NodePort
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+
+  - it: should use default rpc port 8000
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: rpc
+            port: 8000
+            targetPort: rpc
+            protocol: TCP
+
+  - it: should use custom rpc port
+    set:
+      rpcService.port: 7777
+    asserts:
+      - contains:
+          path: spec.ports
+          content:
+            name: rpc
+            port: 7777
+            targetPort: rpc
+            protocol: TCP
+
+  - it: should have correct selector labels
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: test-release
+
+  - it: should have correct metadata labels
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should match service name pattern
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: -rpc$
+
+  - it: should have exactly 1 port defined
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 1
+
+  - it: should have RPC port named rpc
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: rpc

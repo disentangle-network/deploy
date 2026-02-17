@@ -1,0 +1,8 @@
+checks:
+  addAllBuiltIn: true
+  exclude:
+    # We intentionally don't set read-only root filesystem (node writes state)
+    - "read-only-root-fs"
+    # Network policies are out of scope for chart
+    - "no-read-only-root-fs"
+  include: []

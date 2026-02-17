@@ -1,0 +1,15 @@
+apiVersion: v2
+name: disentangle
+description: Helm chart for Disentangle Protocol network deployment
+type: application
+version: 0.1.0
+appVersion: "0.3.0"
+license: Apache-2.0
+keywords:
+  - blockchain
+  - post-quantum
+  - dag
+  - consensus
+maintainers:
+  - name: Disentangle Network
+    url: https://github.com/disentangle-network
