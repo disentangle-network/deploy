@@ -44,9 +44,6 @@ jobs:
             --set persistence.enabled=false \
             --set image.pullPolicy=IfNotPresent \
             --wait --timeout=300s
-        # TODO: Remove continue-on-error once ghcr.io/disentangle-network/disentangle-node
-        # is published. Currently soft-fails because the image doesn't exist yet.
-        continue-on-error: true
 
       - name: Check pod status
         if: always()
@@ -63,9 +60,6 @@ jobs:
       - name: Run helm tests
         run: |
           helm test test-release -n disentangle --timeout=120s
-        # TODO: Remove continue-on-error once ghcr.io/disentangle-network/disentangle-node
-        # is published. Helm test pods cannot start without a valid image.
-        continue-on-error: true
 
       - name: Collect test results
         if: always()

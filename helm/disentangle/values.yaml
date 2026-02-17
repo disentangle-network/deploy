@@ -94,3 +94,12 @@ securityContext:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+# Network policy
+networkPolicy:
+  enabled: false
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: ""  # defaults to (nodes.count / 2) + 1

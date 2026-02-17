@@ -1,4 +1,22 @@
 ---
+# Source: disentangle/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: golden-test-disentangle
+  labels:
+    helm.sh/chart: disentangle-0.1.0
+    app.kubernetes.io/name: disentangle
+    app.kubernetes.io/instance: golden-test
+    app.kubernetes.io/version: "0.3.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: disentangle
+      app.kubernetes.io/instance: golden-test
+---
 # Source: disentangle/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount

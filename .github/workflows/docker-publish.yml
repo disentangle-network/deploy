@@ -1,38 +1,20 @@
-name: Docker Publish
+name: Docker Publish (DEPRECATED)
 
-# NOTE: This workflow builds the protocol image from the protocol repo.
-# It works because protocol is public (GITHUB_TOKEN can checkout public repos).
-# If protocol ever goes private, this needs a PAT secret.
-# Conceptually this workflow belongs in the protocol repo — consider moving it
-# there once the image build/publish pipeline is formalized.
+# DEPRECATED: This workflow has moved to the protocol repo where it belongs.
+# See: https://github.com/disentangle-network/protocol/.github/workflows/docker-publish.yml
+# Tag the protocol repo with v* to trigger image builds.
+#
+# This file is kept temporarily so CI doesn't break if referenced.
+# Remove after protocol repo workflow is confirmed working.
 
 on:
-  push:
-    tags: ['v*']
+  workflow_dispatch:  # manual only, no automatic triggers
 
 jobs:
-  build-push:
+  notice:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: disentangle-network/protocol
-          path: protocol
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: ./protocol
-          push: true
-          tags: |
-            ghcr.io/disentangle-network/disentangle-node:${{ github.ref_name }}
-            ghcr.io/disentangle-network/disentangle-node:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - run: |
+          echo "This workflow has moved to the protocol repo."
+          echo "Push a v* tag to disentangle-network/protocol to build and publish images."
+          exit 0

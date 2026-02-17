@@ -1,0 +1,56 @@
+{{- if .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "disentangle.fullname" . }}
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "disentangle.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow P2P between nodes
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "disentangle.selectorLabels" . | nindent 14 }}
+      ports:
+        - port: {{ .Values.nodes.p2pPort }}
+          protocol: TCP
+    # Allow RPC from within namespace
+    - from:
+        - podSelector: {}
+      ports:
+        - port: {{ .Values.nodes.rpcPort }}
+          protocol: TCP
+    {{- if .Values.ingress.enabled }}
+    # Allow RPC from ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: {{ .Values.nodes.rpcPort }}
+          protocol: TCP
+    {{- end }}
+  egress:
+    # Allow P2P between nodes
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "disentangle.selectorLabels" . | nindent 14 }}
+      ports:
+        - port: {{ .Values.nodes.p2pPort }}
+          protocol: TCP
+    # Allow DNS
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+{{- end }}

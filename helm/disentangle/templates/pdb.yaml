@@ -1,0 +1,13 @@
+{{- if and .Values.podDisruptionBudget.enabled (gt (int .Values.nodes.count) 2) -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "disentangle.fullname" . }}
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable | default (div (int .Values.nodes.count) 2 | add1) }}
+  selector:
+    matchLabels:
+      {{- include "disentangle.selectorLabels" . | nindent 6 }}
+{{- end }}

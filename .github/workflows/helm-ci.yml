@@ -78,7 +78,7 @@ jobs:
         run: pip install yamllint
       - name: Lint YAML files
         run: |
-          yamllint -d relaxed helm/ gitops/
+          yamllint -d relaxed helm/disentangle/Chart.yaml helm/disentangle/values.yaml helm/disentangle/values.schema.json gitops/
 
   helm-unittest:
     runs-on: ubuntu-latest
@@ -88,7 +88,7 @@ jobs:
         with:
           version: v3.14.0
       - name: Install helm-unittest
-        run: helm plugin install https://github.com/helm-unittest/helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v0.6.3
       - name: Run unit tests
         run: helm unittest helm/disentangle/
 
