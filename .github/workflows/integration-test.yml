@@ -32,14 +32,14 @@ jobs:
       - name: Pull and load real image into kind
         run: |
           # Read appVersion from Chart.yaml to stay in sync with the chart.
-          # Pull the platform-specific image then re-tag to strip the multi-arch
-          # manifest index, which kind's containerd import cannot handle.
           APP_VERSION=$(grep '^appVersion:' helm/disentangle/Chart.yaml | sed 's/appVersion: *"\(.*\)"/\1/')
           IMAGE="ghcr.io/disentangle-network/disentangle-node:${APP_VERSION}"
           echo "Pulling ${IMAGE} (linux/amd64)"
-          docker pull --platform linux/amd64 "${IMAGE}"
-          IMGID=$(docker images --no-trunc -q "${IMAGE}" | head -1)
-          docker tag "${IMGID}" "${IMAGE}"
+          # Pull by platform-specific digest to get a single-platform image
+          # that kind's containerd can import (multi-arch indexes fail).
+          AMD64_DIGEST=$(docker manifest inspect "${IMAGE}" | jq -r '.manifests[] | select(.platform.architecture=="amd64" and .platform.os=="linux") | .digest')
+          docker pull "${IMAGE}@${AMD64_DIGEST}"
+          docker tag "${IMAGE}@${AMD64_DIGEST}" "${IMAGE}"
           kind load docker-image "${IMAGE}" --name disentangle-test
 
       - name: Install chart
