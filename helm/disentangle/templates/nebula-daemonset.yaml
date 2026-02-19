@@ -1,0 +1,57 @@
+{{- if .Values.nebula.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "disentangle.fullname" . }}-nebula
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nebula
+spec:
+  selector:
+    matchLabels:
+      {{- include "disentangle.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: nebula
+  template:
+    metadata:
+      labels:
+        {{- include "disentangle.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: nebula
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: nebula
+          image: "{{ .Values.nebula.image.repository }}:{{ .Values.nebula.image.tag }}"
+          imagePullPolicy: {{ .Values.nebula.image.pullPolicy }}
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+          ports:
+            - containerPort: {{ .Values.nebula.port }}
+              protocol: UDP
+              name: nebula
+          volumeMounts:
+            - name: nebula-config
+              mountPath: /etc/nebula
+              readOnly: true
+            - name: nebula-certs
+              mountPath: /etc/nebula/certs
+              readOnly: true
+            - name: tun
+              mountPath: /dev/net/tun
+          command:
+            - nebula
+            - -config
+            - /etc/nebula/config.yaml
+      volumes:
+        - name: nebula-config
+          configMap:
+            name: {{ include "disentangle.fullname" . }}-nebula-config
+        - name: nebula-certs
+          secret:
+            secretName: {{ .Values.nebula.certSecretName }}
+        - name: tun
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+{{- end }}

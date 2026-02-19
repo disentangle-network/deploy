@@ -90,6 +90,35 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 1000
 
+# Nebula-PQ overlay mesh
+nebula:
+  enabled: false
+  image:
+    repository: ghcr.io/disentangle-network/nebula-pq
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  # Mode: "lighthouse" or "node"
+  mode: "node"
+  # Overlay network CIDR (e.g., 10.42.0.0/16)
+  overlayCidr: "10.42.0.0/16"
+  # Lighthouse address (ip:port) - required for mode=node
+  lighthouseAddr: ""
+  # Port for nebula UDP traffic
+  port: 4242
+  # Certificate secret name (created by launch mesh add, SOPS-encrypted)
+  certSecretName: "nebula-certs"
+  # Firewall rules
+  firewall:
+    outbound:
+      - port: any
+        proto: any
+        host: any
+    inbound:
+      - port: any
+        proto: any
+        groups:
+          - disentangle
+
 # Node scheduling
 nodeSelector: {}
 tolerations: []

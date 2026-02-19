@@ -29,11 +29,18 @@ jobs:
           node_image: kindest/node:${{ matrix.k8s-version }}
           cluster_name: disentangle-test
 
-      - name: Build test image (or use existing)
+      - name: Pull and load real image into kind
         run: |
-          # For CI, we use a mock/stub image since we can't build the full Rust binary
-          # In production CI, this would build from the protocol repo
-          echo "Using chart default image (pull from registry)"
+          # Read appVersion from Chart.yaml to stay in sync with the chart.
+          # Pull the platform-specific image then re-tag to strip the multi-arch
+          # manifest index, which kind's containerd import cannot handle.
+          APP_VERSION=$(grep '^appVersion:' helm/disentangle/Chart.yaml | sed 's/appVersion: *"\(.*\)"/\1/')
+          IMAGE="ghcr.io/disentangle-network/disentangle-node:${APP_VERSION}"
+          echo "Pulling ${IMAGE} (linux/amd64)"
+          docker pull --platform linux/amd64 "${IMAGE}"
+          IMGID=$(docker images --no-trunc -q "${IMAGE}" | head -1)
+          docker tag "${IMGID}" "${IMAGE}"
+          kind load docker-image "${IMAGE}" --name disentangle-test
 
       - name: Install chart
         run: |
