@@ -1,0 +1,46 @@
+{{- if .Values.nebula.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "disentangle.fullname" . }}-nebula-config
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nebula
+data:
+  config.yaml: |
+    pki:
+      ca: /etc/nebula/certs/ca.crt
+      cert: /etc/nebula/certs/host.crt
+      key: /etc/nebula/certs/host.key
+      curve: PQ
+
+    {{- if eq .Values.nebula.mode "lighthouse" }}
+    lighthouse:
+      am_lighthouse: true
+    {{- else }}
+    lighthouse:
+      am_lighthouse: false
+      hosts:
+        - "{{ .Values.nebula.lighthouseAddr }}"
+    {{- end }}
+
+    listen:
+      host: 0.0.0.0
+      port: {{ .Values.nebula.port }}
+
+    punchy:
+      punch: true
+
+    tun:
+      disabled: false
+      dev: nebula1
+
+    firewall:
+      outbound:
+        {{- toYaml .Values.nebula.firewall.outbound | nindent 8 }}
+      inbound:
+        {{- toYaml .Values.nebula.firewall.inbound | nindent 8 }}
+
+    logging:
+      level: info
+{{- end }}
