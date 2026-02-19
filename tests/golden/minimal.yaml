@@ -194,8 +194,14 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
+        - name: config
+          mountPath: /etc/disentangle
+          readOnly: true
         workingDir: /data
       volumes:
+      - name: config
+        configMap:
+          name: golden-test-disentangle-config
       - name: data
         emptyDir: {}
 ---

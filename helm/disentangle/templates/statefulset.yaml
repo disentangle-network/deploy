@@ -65,6 +65,9 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
+        - name: config
+          mountPath: /etc/disentangle
+          readOnly: true
         workingDir: /data
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -78,8 +81,11 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if not .Values.persistence.enabled }}
       volumes:
+      - name: config
+        configMap:
+          name: {{ include "disentangle.fullname" . }}-config
+      {{- if not .Values.persistence.enabled }}
       - name: data
         emptyDir: {}
       {{- end }}
