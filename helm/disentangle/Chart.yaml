@@ -3,7 +3,7 @@ name: disentangle
 description: Helm chart for Disentangle Protocol network deployment
 type: application
 version: 0.1.0
-appVersion: "0.3.0"
+appVersion: "0.3.1"
 license: Apache-2.0
 keywords:
   - blockchain
