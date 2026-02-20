@@ -223,7 +223,21 @@ spec:
   restartPolicy: Never
   containers:
   - name: test-connection
-    image: alpine/curl:latest
+    image: alpine/curl:8.12.1
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      allowPrivilegeEscalation: false
+
+      capabilities:
+        drop: ["ALL"]
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
     command:
       - /bin/sh
       - -c
@@ -287,7 +301,21 @@ spec:
   restartPolicy: Never
   containers:
   - name: test-genesis
-    image: alpine/curl:latest
+    image: alpine/curl:8.12.1
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      allowPrivilegeEscalation: false
+
+      capabilities:
+        drop: ["ALL"]
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
     command:
       - /bin/sh
       - -c
@@ -360,7 +388,21 @@ spec:
   restartPolicy: Never
   containers:
   - name: test-rpc
-    image: alpine/curl:latest
+    image: alpine/curl:8.12.1
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      allowPrivilegeEscalation: false
+
+      capabilities:
+        drop: ["ALL"]
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
     command:
       - /bin/sh
       - -c
