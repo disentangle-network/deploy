@@ -1,5 +1,8 @@
 # Disentangle Deploy
 
+[![Helm CI](https://github.com/disentangle-network/deploy/actions/workflows/helm-ci.yml/badge.svg)](https://github.com/disentangle-network/deploy/actions/workflows/helm-ci.yml)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 Single-config cluster deployment for [Disentangle Protocol](https://github.com/disentangle-network/protocol) networks.
 
 ## Overview

@@ -1,0 +1,41 @@
+name: Helm OCI Publish
+
+on:
+  push:
+    tags:
+      - "chart-v*"
+
+permissions:
+  packages: write
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  CHART_PATH: helm/disentangle
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} --username ${{ github.actor }} --password-stdin
+
+      - name: Package chart
+        run: helm package ${{ env.CHART_PATH }}
+
+      - name: Push to OCI registry
+        run: |
+          PKG=$(ls disentangle-*.tgz)
+          helm push "${PKG}" oci://${{ env.REGISTRY }}/disentangle-network/charts
+
+      - name: Verify pullable
+        run: |
+          VERSION=$(grep '^version:' ${{ env.CHART_PATH }}/Chart.yaml | awk '{print $2}')
+          helm pull oci://${{ env.REGISTRY }}/disentangle-network/charts/disentangle --version "${VERSION}"
+          echo "Chart published and verified: disentangle:${VERSION}"
