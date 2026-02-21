@@ -201,6 +201,14 @@ tests:
           path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
           pattern: '\$RPC_URL/transaction'
 
+  - it: should fetch tips for parent references before each transaction
+    set:
+      traffic.enabled: true
+    asserts:
+      - matchRegex:
+          path: spec.jobTemplate.spec.template.spec.containers[0].command[2]
+          pattern: '\$RPC_URL/tips'
+
   - it: should have valid CronJob structure
     set:
       traffic.enabled: true

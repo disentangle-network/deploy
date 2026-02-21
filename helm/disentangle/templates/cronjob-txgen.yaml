@@ -43,19 +43,27 @@ spec:
                 echo "Checking node status..."
                 STATUS=$(curl -sf "$RPC_URL/status") || { echo "FATAL: node not reachable"; exit 1; }
                 DAG_SIZE=$(echo "$STATUS" | grep -o '"dag_size":[0-9]*' | cut -d: -f2)
-                TIPS=$(echo "$STATUS" | grep -o '"tips":\[[^]]*\]')
-                echo "  dag_size=$DAG_SIZE tips=$TIPS"
-
-                # NOTE: /status returns truncated tip hashes (8 bytes). The /transaction
-                # endpoint requires full 32-byte parent hashes. Until the API exposes full
-                # tip hashes, we submit with empty parents (creates root transactions).
-                # This still exercises the full submission pipeline: PoW, SimHash,
-                # Dilithium signing, gossip broadcast.
+                echo "  dag_size=$DAG_SIZE"
 
                 for i in $(seq 1 {{ .Values.traffic.txCount }}); do
-                  PAYLOAD="{\"sender\":\"txgen-$HOSTNAME-$i\",\"parents\":[],\"data\":\"txgen-$(date +%s)-$i\"}"
+                  # GET /tips returns full 32-byte hex tip hashes as a JSON array:
+                  #   ["aabb...64chars","ccdd...64chars",...]
+                  # Take up to 3 tips as parent references for the new transaction.
+                  TIPS_JSON=$(curl -sf "$RPC_URL/tips") || { echo "Failed to fetch tips for tx $i"; continue; }
 
-                  echo "Submitting transaction $i..."
+                  # Extract up to 3 quoted hex hashes and rebuild as a JSON array.
+                  # Each element is already a quoted string, e.g. "aabb...".
+                  PARENTS=$(echo "$TIPS_JSON" \
+                    | tr -d '[]' \
+                    | tr ',' '\n' \
+                    | head -3 \
+                    | tr '\n' ',' \
+                    | sed 's/,$//')
+                  PARENTS="[${PARENTS}]"
+
+                  PAYLOAD="{\"sender\":\"txgen-$HOSTNAME-$i\",\"parents\":$PARENTS,\"data\":\"txgen-$(date +%s)-$i\"}"
+
+                  echo "Submitting transaction $i (parents: $PARENTS)..."
                   RESPONSE=$(curl -sf -X POST \
                     -H "Content-Type: application/json" \
                     -d "$PAYLOAD" \
