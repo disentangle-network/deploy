@@ -95,7 +95,7 @@ nebula:
   enabled: false
   image:
     repository: ghcr.io/disentangle-network/nebula-pq
-    tag: "latest"
+    tag: "1.11.0-pq.1"
     pullPolicy: IfNotPresent
   # Mode: "lighthouse" or "node"
   mode: "node"
