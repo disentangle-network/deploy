@@ -93,7 +93,7 @@ jobs:
         with:
           version: v3.14.0
       - name: Install helm-unittest
-        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v0.6.3
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest --version v0.5.2
       - name: Run unit tests
         run: helm unittest helm/disentangle/
 
@@ -120,3 +120,21 @@ jobs:
             tar xz -C /usr/local/bin
       - name: Run OPA policy tests
         run: ./tests/policies/run-conftest.sh
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: helm-template
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+      - name: Install kube-linter
+        run: |
+          curl -sL https://github.com/stackrox/kube-linter/releases/download/v0.6.8/kube-linter-linux.tar.gz | \
+            tar xz -C /usr/local/bin
+      - name: Render templates
+        run: helm template test-release helm/disentangle/ > /tmp/rendered.yaml
+      - name: Run kube-linter
+        run: kube-linter lint --config .kube-linter.yaml /tmp/rendered.yaml
