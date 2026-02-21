@@ -230,10 +230,11 @@ spec:
   restartPolicy: Never
   containers:
   - name: test-connection
-    image: alpine/curl:8.12.1
+    image: "ghcr.io/disentangle-network/test-tools:latest"
+    imagePullPolicy: IfNotPresent
     securityContext:
       runAsNonRoot: true
-      runAsUser: 65534
+      runAsUser: 65532
       allowPrivilegeEscalation: false
 
       capabilities:
@@ -309,10 +310,11 @@ spec:
   restartPolicy: Never
   containers:
   - name: test-genesis
-    image: alpine/curl:8.12.1
+    image: "ghcr.io/disentangle-network/test-tools:latest"
+    imagePullPolicy: IfNotPresent
     securityContext:
       runAsNonRoot: true
-      runAsUser: 65534
+      runAsUser: 65532
       allowPrivilegeEscalation: false
 
       capabilities:
@@ -329,7 +331,6 @@ spec:
       - -c
       - |
         set -e
-        apk add --no-cache jq > /dev/null 2>&1
 
         echo "=== Disentangle Genesis Sync Test ==="
 
@@ -397,10 +398,11 @@ spec:
   restartPolicy: Never
   containers:
   - name: test-rpc
-    image: alpine/curl:8.12.1
+    image: "ghcr.io/disentangle-network/test-tools:latest"
+    imagePullPolicy: IfNotPresent
     securityContext:
       runAsNonRoot: true
-      runAsUser: 65534
+      runAsUser: 65532
       allowPrivilegeEscalation: false
 
       capabilities:
@@ -417,7 +419,6 @@ spec:
       - -c
       - |
         set -e
-        apk add --no-cache jq > /dev/null 2>&1
 
         echo "=== Disentangle RPC API Test ==="
 
