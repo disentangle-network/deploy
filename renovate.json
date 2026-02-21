@@ -4,7 +4,7 @@
   "packageRules": [
     {
       "matchManagers": ["helm-values"],
-      "matchPackagePatterns": ["disentangle.*"],
+      "matchPackagePatterns": ["disentangle.*", "nebula.*"],
       "automerge": false,
       "labels": ["disentangle-update"]
     },
@@ -16,19 +16,15 @@
       "labels": ["helm-deps"]
     },
     {
-      "matchManagers": ["dockerfile"],
-      "matchPackagePatterns": ["rust"],
-      "groupName": "rust-toolchain",
-      "automerge": true,
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-    {
       "matchManagers": ["github-actions"],
       "automerge": true,
       "matchUpdateTypes": ["minor", "patch"],
       "labels": ["ci-update"]
     }
   ],
+  "helm-values": {
+    "fileMatch": ["helm/.+/values\\.yaml$"]
+  },
   "vulnerabilityAlerts": {
     "enabled": true,
     "labels": ["security"]
