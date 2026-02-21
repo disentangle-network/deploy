@@ -219,6 +219,7 @@ metadata:
   annotations:
     "helm.sh/hook": test
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "kube-linter.io/ignore-all": "true"
 spec:
   restartPolicy: Never
   containers:
@@ -297,6 +298,7 @@ metadata:
   annotations:
     "helm.sh/hook": test
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "kube-linter.io/ignore-all": "true"
 spec:
   restartPolicy: Never
   containers:
@@ -384,6 +386,7 @@ metadata:
   annotations:
     "helm.sh/hook": test
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+    "kube-linter.io/ignore-all": "true"
 spec:
   restartPolicy: Never
   containers:

@@ -3,6 +3,18 @@ checks:
   exclude:
     # We intentionally don't set read-only root filesystem (node writes state)
     - "read-only-root-fs"
-    # Network policies are out of scope for chart
     - "no-read-only-root-fs"
+    # Namespace is set at install time, not in templates
+    - "use-namespace"
+    # Network policies are deployment-specific, not chart-scoped
+    - "non-isolated-pod"
+    # Affinity and DNS config are deployment-specific
+    - "no-anti-affinity"
+    - "no-node-affinity"
+    - "dnsconfig-options"
+    # StatefulSets use OnDelete strategy by design
+    - "no-rolling-update-strategy"
+    # Owner labels and email annotations are org-specific
+    - "required-label-owner"
+    - "required-annotation-email"
   include: []
