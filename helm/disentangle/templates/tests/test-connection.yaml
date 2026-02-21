@@ -12,10 +12,11 @@ spec:
   restartPolicy: Never
   containers:
   - name: test-connection
-    image: alpine/curl:8.12.1
+    image: "{{ .Values.testImage.repository }}:{{ .Values.testImage.tag }}"
+    imagePullPolicy: {{ .Values.testImage.pullPolicy }}
     securityContext:
       runAsNonRoot: true
-      runAsUser: 65534
+      runAsUser: 65532
       allowPrivilegeEscalation: false
 
       capabilities:

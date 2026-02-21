@@ -7,6 +7,12 @@ image:
   tag: ""  # defaults to appVersion from Chart.yaml
   pullPolicy: IfNotPresent
 
+# Test image (includes curl + jq; no runtime apk needed)
+testImage:
+  repository: ghcr.io/disentangle-network/test-tools
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
 # Network configuration
 nodes:
   count: 5           # Number of nodes in the network
