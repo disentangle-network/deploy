@@ -113,11 +113,11 @@ tests:
 
   - it: should use appVersion as default image tag
     chart:
-      appVersion: 0.3.0
+      appVersion: v0.4.0
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: ghcr.io/disentangle-network/disentangle-node:0.3.0
+          value: ghcr.io/disentangle-network/disentangle-node:v0.4.0
 
   - it: should use custom image tag when specified
     set:

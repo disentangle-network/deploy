@@ -12,12 +12,12 @@ metadata:
 data:
   # Network identity
   CLUSTER_NAME: "disentangle-testnet"
-  NETWORK_VERSION: "0.3.0"
+  NETWORK_VERSION: "0.4.0"
 
   # Image configuration
   IMAGE_REGISTRY: "ghcr.io"
   IMAGE_REPOSITORY: "disentangle-network/disentangle-node"
-  IMAGE_TAG: "0.3.0"
+  IMAGE_TAG: "v0.4.0"
 
   # Storage
   STORAGE_CLASS: ""  # Use cluster default

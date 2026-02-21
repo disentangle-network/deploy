@@ -98,7 +98,7 @@ See `helm/disentangle/values.yaml` for all available configuration options.
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `image.repository` | ghcr.io/disentangle-network/disentangle-node | Container image repository |
-| `image.tag` | "" | Image tag (defaults to Chart appVersion: 0.3.0) |
+| `image.tag` | "" | Image tag (defaults to Chart appVersion: v0.4.0) |
 | `image.pullPolicy` | IfNotPresent | Image pull policy |
 
 ### Resources
@@ -148,7 +148,7 @@ See `helm/disentangle/values.yaml` for all available configuration options.
 ```
 deploy/
 ├── helm/disentangle/              # Helm chart
-│   ├── Chart.yaml                 # Chart metadata (v0.1.0, appVersion 0.3.0)
+│   ├── Chart.yaml                 # Chart metadata (v0.1.0, appVersion v0.4.0)
 │   ├── values.yaml                # Default configuration values
 │   ├── templates/                 # Kubernetes manifests
 │   │   ├── statefulset.yaml       # Node StatefulSet
