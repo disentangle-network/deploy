@@ -2,8 +2,8 @@ apiVersion: v2
 name: disentangle
 description: Helm chart for Disentangle Protocol network deployment
 type: application
-version: 0.1.0
-appVersion: "v0.4.0"
+version: 0.2.0
+appVersion: "v0.4.1"
 license: Apache-2.0
 keywords:
   - blockchain
