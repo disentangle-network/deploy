@@ -5,10 +5,10 @@ kind: PodDisruptionBudget
 metadata:
   name: golden-test-disentangle
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   minAvailable: 3
@@ -23,10 +23,10 @@ kind: ServiceAccount
 metadata:
   name: golden-test-disentangle
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: disentangle/templates/configmap.yaml
@@ -35,10 +35,10 @@ kind: ConfigMap
 metadata:
   name: golden-test-disentangle-config
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
 data:
   cluster-config.yaml: |
@@ -64,10 +64,10 @@ kind: Service
 metadata:
   name: golden-test-disentangle-headless
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -91,10 +91,10 @@ kind: Service
 metadata:
   name: golden-test-disentangle-rpc
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -113,10 +113,10 @@ kind: StatefulSet
 metadata:
   name: golden-test-disentangle
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   serviceName: golden-test-disentangle-headless
@@ -138,7 +138,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: disentangle-node
-        image: ghcr.io/disentangle-network/disentangle-node:v0.4.0
+        image: ghcr.io/disentangle-network/disentangle-node:v0.4.1
         imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false
@@ -217,10 +217,10 @@ kind: Pod
 metadata:
   name: golden-test-disentangle-test-connection
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": test
@@ -297,10 +297,10 @@ kind: Pod
 metadata:
   name: golden-test-disentangle-test-genesis
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": test
@@ -385,10 +385,10 @@ kind: Pod
 metadata:
   name: golden-test-disentangle-test-rpc
   labels:
-    helm.sh/chart: disentangle-0.1.0
+    helm.sh/chart: disentangle-0.2.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
-    app.kubernetes.io/version: "v0.4.0"
+    app.kubernetes.io/version: "v0.4.1"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": test
