@@ -3,7 +3,7 @@
 ## One-Line Install
 
 ```bash
-cd /Users/lclose/DISENTANGLE-NETWORK/deploy/helm && helm install disentangle ./disentangle
+helm install disentangle helm/disentangle
 ```
 
 ## Essential Commands

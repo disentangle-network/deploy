@@ -10,7 +10,7 @@ Helm chart for deploying a Disentangle Protocol network on Kubernetes.
 - RPC service with optional ingress
 - Optional transaction generator CronJob for testing
 - Configurable consensus and PoW parameters
-- Security hardening with PSP and non-root containers
+- Security hardening with Pod Security Standards and non-root containers
 
 ## Installation
 

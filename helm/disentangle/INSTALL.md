@@ -4,7 +4,7 @@ Quick start guide for deploying the Disentangle Protocol network using Helm.
 
 ## Prerequisites
 
-- Kubernetes cluster (1.20+)
+- Kubernetes cluster (1.28+)
 - Helm 3.x
 - kubectl configured to access your cluster
 - At least 5Gi of persistent storage available (1Gi per node with default 5 nodes)
@@ -13,7 +13,7 @@ Quick start guide for deploying the Disentangle Protocol network using Helm.
 
 ```bash
 # Navigate to the Helm chart directory
-cd /Users/lclose/DISENTANGLE-NETWORK/deploy/helm
+cd helm
 
 # Install with default settings (5 nodes)
 helm install disentangle ./disentangle
