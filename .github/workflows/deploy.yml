@@ -1,0 +1,97 @@
+name: Deploy to OKE
+
+on:
+  workflow_run:
+    workflows: ["Integration Test"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to OKE
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Install OCI CLI
+        run: |
+          pip install oci-cli --quiet
+
+      - name: Configure OCI credentials
+        run: |
+          mkdir -p ~/.oci
+          cat > ~/.oci/config <<OCIEOF
+          [DEFAULT]
+          tenancy=${{ secrets.OCI_CLI_TENANCY }}
+          user=${{ secrets.OCI_CLI_USER }}
+          fingerprint=${{ secrets.OCI_CLI_FINGERPRINT }}
+          key_file=~/.oci/key.pem
+          region=${{ secrets.OCI_CLI_REGION }}
+          OCIEOF
+          echo "${{ secrets.OCI_CLI_KEY_CONTENT }}" > ~/.oci/key.pem
+          chmod 600 ~/.oci/key.pem ~/.oci/config
+
+      - name: Generate kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          oci ce cluster create-kubeconfig \
+            --cluster-id ${{ secrets.OKE_CLUSTER_OCID }} \
+            --region ${{ secrets.OCI_CLI_REGION }} \
+            --file ~/.kube/config \
+            --token-version 2.0.0 \
+            --kube-endpoint PUBLIC_ENDPOINT
+          chmod 600 ~/.kube/config
+
+      - name: Verify cluster access
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install disentangle helm/disentangle/ \
+            --namespace disentangle \
+            --set nodes.count=3 \
+            --set persistence.enabled=true \
+            --set persistence.storageClass=oci-bv \
+            --set persistence.size=1Gi \
+            --set pow.difficulty=16 \
+            --set pow.mineIntervalSecs=10 \
+            --wait --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods -n disentangle -o wide
+          kubectl get svc -n disentangle
+
+      - name: Run Helm tests
+        run: |
+          helm test disentangle -n disentangle --timeout=120s
+
+      - name: Collect diagnostics on failure
+        if: failure()
+        run: |
+          echo "=== Pod Status ==="
+          kubectl get pods -n disentangle -o wide
+          echo ""
+          echo "=== Pod Events ==="
+          kubectl get events -n disentangle --sort-by='.lastTimestamp' | tail -30
+          echo ""
+          echo "=== Pod Logs ==="
+          for pod in $(kubectl get pods -n disentangle -o name 2>/dev/null | head -3); do
+            echo "--- $pod ---"
+            kubectl logs "$pod" -n disentangle --tail=20 2>/dev/null || echo "No logs"
+          done
