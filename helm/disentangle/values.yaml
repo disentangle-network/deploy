@@ -84,6 +84,7 @@ pow:
 # Pod-level security context
 podSecurityContext:
   runAsNonRoot: true
+  fsGroup: 1000
   seccompProfile:
     type: RuntimeDefault
 

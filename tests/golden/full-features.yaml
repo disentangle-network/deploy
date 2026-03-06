@@ -133,6 +133,7 @@ spec:
     spec:
       serviceAccountName: golden-test-disentangle
       securityContext:
+        fsGroup: 1000
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
@@ -244,6 +245,7 @@ spec:
         spec:
           restartPolicy: OnFailure
           securityContext:
+            fsGroup: 1000
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
