@@ -106,7 +106,7 @@ nebula:
     pullPolicy: IfNotPresent
   # Mode: "lighthouse" or "node"
   mode: "node"
-  # Overlay network CIDR (e.g., 10.42.0.0/16)
+  # Overlay network CIDR - reserved for future networkpolicy/tun configuration
   overlayCidr: "10.42.0.0/16"
   # Lighthouse address (ip:port) - required for mode=node
   lighthouseAddr: ""
