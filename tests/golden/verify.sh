@@ -61,6 +61,12 @@ compare "full-features" \
 compare "no-serviceaccount" \
     --set serviceAccount.create=false
 
+# Nebula mesh enabled
+compare "nebula-enabled" \
+    --set nebula.enabled=true \
+    --set nebula.mode=node \
+    --set nebula.lighthouseAddr="10.0.0.1:4242"
+
 # Custom resource limits (using values file to preserve string types)
 compare "custom-resources" \
     -f "$GOLDEN_DIR/custom-resources-values.yaml"

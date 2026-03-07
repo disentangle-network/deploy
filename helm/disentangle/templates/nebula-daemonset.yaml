@@ -23,6 +23,10 @@ spec:
         - name: nebula
           image: "{{ .Values.nebula.image.repository }}:{{ .Values.nebula.image.tag }}"
           imagePullPolicy: {{ .Values.nebula.image.pullPolicy }}
+          {{- with .Values.nebula.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           securityContext:
             capabilities:
               add: ["NET_ADMIN"]

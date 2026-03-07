@@ -104,6 +104,13 @@ nebula:
     repository: ghcr.io/disentangle-network/nebula-pq
     tag: "1.11.0-pq.1"
     pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
   # Mode: "lighthouse" or "node"
   mode: "node"
   # Overlay network CIDR - reserved for future networkpolicy/tun configuration
