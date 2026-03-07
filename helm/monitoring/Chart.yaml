@@ -1,0 +1,11 @@
+apiVersion: v2
+name: disentangle-monitoring
+description: Monitoring stack for Disentangle Network (VictoriaMetrics + Grafana)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+license: Apache-2.0
+dependencies:
+  - name: victoria-metrics-k8s-stack
+    version: "0.72.x"
+    repository: https://victoriametrics.github.io/helm-charts/

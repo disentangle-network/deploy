@@ -1,6 +1,7 @@
-.PHONY: help lint test test-unit test-golden test-policy test-integration test-all clean
+.PHONY: help lint test test-unit test-golden test-policy test-integration test-all clean lint-monitoring template-monitoring deps-monitoring
 
 CHART_DIR := helm/disentangle
+MONITORING_CHART_DIR := helm/monitoring
 NAMESPACE := disentangle-test
 RELEASE := test-release
 
@@ -9,10 +10,19 @@ help: ## Show this help
 
 # === Linting ===
 
-lint: lint-helm lint-yaml lint-shell ## Run all linters
+lint: lint-helm lint-monitoring lint-yaml lint-shell ## Run all linters
 
 lint-helm: ## Lint Helm chart
 	helm lint $(CHART_DIR)
+
+lint-monitoring: ## Lint monitoring chart
+	helm lint $(MONITORING_CHART_DIR)
+
+template-monitoring: ## Render monitoring chart templates
+	helm template monitoring $(MONITORING_CHART_DIR) > /dev/null
+
+deps-monitoring: ## Build monitoring chart dependencies
+	helm dependency build $(MONITORING_CHART_DIR)
 
 lint-yaml: ## Lint YAML files (excluding Helm templates)
 	@command -v yamllint >/dev/null 2>&1 || { echo "Install yamllint: pip install yamllint"; exit 1; }
