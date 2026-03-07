@@ -57,6 +57,19 @@ helm install disentangle ./disentangle --set traffic.enabled=true
 | `consensus.fixedPointScale` | Fixed point scale | `65536` |
 | `pow.difficulty` | PoW difficulty | `16` |
 | `pow.mineIntervalSecs` | Mining interval in seconds | `10` |
+| `nebula.enabled` | Enable Nebula-PQ mesh overlay | `false` |
+| `nebula.image.repository` | Nebula-PQ container image | `ghcr.io/disentangle-network/nebula-pq` |
+| `nebula.image.tag` | Nebula-PQ image tag | `1.11.0-pq.1` |
+| `nebula.mode` | Nebula mode (`lighthouse` or `node`) | `node` |
+| `nebula.overlayCidr` | Overlay network CIDR | `10.42.0.0/16` |
+| `nebula.lighthouseAddr` | Lighthouse address (ip:port) | `""` |
+| `nebula.port` | Nebula UDP port | `4242` |
+| `nebula.certSecretName` | TLS certificate secret name | `nebula-certs` |
+| `nebula.resources.limits.cpu` | Nebula CPU limit | `200m` |
+| `nebula.resources.limits.memory` | Nebula memory limit | `128Mi` |
+| `networkPolicy.enabled` | Enable Kubernetes NetworkPolicy | `false` |
+| `podDisruptionBudget.enabled` | Enable PodDisruptionBudget | `true` |
+| `podDisruptionBudget.minAvailable` | Minimum available pods | `(count/2)+1` |
 
 ## Network Architecture
 
@@ -102,6 +115,25 @@ helm upgrade disentangle ./disentangle --set traffic.enabled=true
 # View generated transactions
 kubectl logs job/disentangle-txgen-<timestamp>
 ```
+
+## Nebula-PQ Mesh
+
+The chart optionally deploys a [Nebula-PQ](https://github.com/disentangle-network/nebula-pq) mesh overlay using post-quantum cryptography (ML-DSA-87).
+
+```bash
+# Enable nebula mesh as a node connecting to a lighthouse
+helm upgrade disentangle ./disentangle \
+  --set nebula.enabled=true \
+  --set nebula.mode=node \
+  --set nebula.lighthouseAddr="10.0.0.1:4242"
+
+# Enable as lighthouse
+helm upgrade disentangle ./disentangle \
+  --set nebula.enabled=true \
+  --set nebula.mode=lighthouse
+```
+
+Nebula runs as a DaemonSet with `hostNetwork: true` and requires a certificate secret created by `launch mesh add`.
 
 ## Monitoring
 

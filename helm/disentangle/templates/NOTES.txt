@@ -41,5 +41,31 @@ Ingress is ENABLED:
 {{- end }}
 {{- end }}
 
+{{- if .Values.nebula.enabled }}
+
+Nebula-PQ Mesh is ENABLED:
+- Mode: {{ .Values.nebula.mode }}
+- Overlay CIDR: {{ .Values.nebula.overlayCidr }}
+- UDP Port: {{ .Values.nebula.port }}
+{{- if eq .Values.nebula.mode "node" }}
+- Lighthouse: {{ .Values.nebula.lighthouseAddr }}
+{{- end }}
+
+View mesh status:
+   kubectl get pods -l app.kubernetes.io/component=nebula
+   kubectl logs -l app.kubernetes.io/component=nebula
+{{- end }}
+
+{{- if .Values.networkPolicy.enabled }}
+
+Network Policy is ENABLED:
+- P2P traffic restricted to disentangle pods
+- RPC access limited to namespace
+- DNS egress allowed
+{{- if .Values.ingress.enabled }}
+- Ingress controller access from ingress-nginx namespace
+{{- end }}
+{{- end }}
+
 For more information, see the chart README:
    cat README.md
