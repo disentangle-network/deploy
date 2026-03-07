@@ -1,82 +1,141 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Disentangle Helm Chart Values",
+  "description": "JSON Schema for the Disentangle Protocol Helm chart values.yaml",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "image": {
       "type": "object",
+      "description": "Container image for the disentangle-node binary.",
+      "additionalProperties": false,
       "properties": {
         "repository": {
-          "type": "string"
+          "type": "string",
+          "description": "Container image registry and repository.",
+          "default": "ghcr.io/disentangle-network/disentangle-node"
         },
         "tag": {
-          "type": "string"
+          "type": "string",
+          "description": "Image tag override. Empty string means the appVersion from Chart.yaml is used.",
+          "default": ""
         },
         "pullPolicy": {
           "type": "string",
-          "enum": ["Always", "IfNotPresent", "Never"]
+          "description": "Kubernetes image pull policy.",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "default": "IfNotPresent"
         }
-      },
-      "required": ["repository"]
+      }
+    },
+    "testImage": {
+      "type": "object",
+      "description": "Container image used by Helm test pods (includes curl and jq).",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "description": "Test image registry and repository.",
+          "default": "ghcr.io/disentangle-network/test-tools"
+        },
+        "tag": {
+          "type": "string",
+          "description": "Test image tag.",
+          "default": "latest"
+        },
+        "pullPolicy": {
+          "type": "string",
+          "description": "Kubernetes image pull policy for the test image.",
+          "enum": ["Always", "IfNotPresent", "Never"],
+          "default": "IfNotPresent"
+        }
+      }
     },
     "nodes": {
       "type": "object",
+      "description": "Network topology and port configuration for the StatefulSet.",
+      "additionalProperties": false,
       "properties": {
         "count": {
           "type": "integer",
+          "description": "Number of disentangle nodes to run in the StatefulSet.",
           "minimum": 1,
-          "maximum": 100
+          "default": 5
         },
         "p2pPort": {
           "type": "integer",
+          "description": "Port used for peer-to-peer gossip and block propagation.",
           "minimum": 1,
-          "maximum": 65535
+          "maximum": 65535,
+          "default": 9000
         },
         "rpcPort": {
           "type": "integer",
+          "description": "Port used for the HTTP JSON-RPC API on each node.",
           "minimum": 1,
-          "maximum": 65535
+          "maximum": 65535,
+          "default": 8000
         }
-      },
-      "required": ["count", "p2pPort", "rpcPort"]
+      }
     },
     "persistence": {
       "type": "object",
+      "description": "Persistent volume claim settings for node state storage.",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Enable persistent storage via PVC for each node. When false, nodes use emptyDir (data lost on restart).",
+          "default": true
         },
         "size": {
           "type": "string",
-          "pattern": "^[0-9]+(Ei|Pi|Ti|Gi|Mi|Ki)$"
+          "description": "Requested PVC size per node (e.g. '1Gi', '10Gi'). Note: OCI enforces a 50Gi minimum for block volumes.",
+          "default": "1Gi"
         },
         "storageClass": {
-          "type": "string"
+          "type": "string",
+          "description": "StorageClass name. Empty string uses the cluster default StorageClass.",
+          "default": ""
         }
-      },
-      "required": ["enabled", "size"]
+      }
     },
     "resources": {
       "type": "object",
+      "description": "CPU and memory resource requests and limits for each node container.",
+      "additionalProperties": true,
       "properties": {
         "limits": {
           "type": "object",
+          "description": "Resource limits (hard ceiling).",
+          "additionalProperties": true,
           "properties": {
             "cpu": {
-              "type": "string"
+              "type": "string",
+              "description": "CPU limit (e.g. '500m', '1').",
+              "default": "500m"
             },
             "memory": {
-              "type": "string"
+              "type": "string",
+              "description": "Memory limit (e.g. '512Mi', '1Gi').",
+              "default": "512Mi"
             }
           }
         },
         "requests": {
           "type": "object",
+          "description": "Resource requests (scheduling guarantee).",
+          "additionalProperties": true,
           "properties": {
             "cpu": {
-              "type": "string"
+              "type": "string",
+              "description": "CPU request (e.g. '100m', '0.5').",
+              "default": "100m"
             },
             "memory": {
-              "type": "string"
+              "type": "string",
+              "description": "Memory request (e.g. '128Mi', '256Mi').",
+              "default": "128Mi"
             }
           }
         }
@@ -84,201 +143,518 @@
     },
     "serviceAccount": {
       "type": "object",
+      "description": "Kubernetes ServiceAccount configuration.",
+      "additionalProperties": false,
       "properties": {
         "create": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to create a dedicated ServiceAccount for the chart.",
+          "default": true
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Override the ServiceAccount name. Empty string uses the chart fullname.",
+          "default": ""
         }
-      },
-      "required": ["create"]
+      }
     },
     "rpcService": {
       "type": "object",
+      "description": "Kubernetes Service exposing the JSON-RPC API.",
+      "additionalProperties": false,
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["ClusterIP", "NodePort", "LoadBalancer"]
+          "description": "Service type for the RPC endpoint.",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+          "default": "ClusterIP"
         },
         "port": {
           "type": "integer",
+          "description": "Service port number for RPC.",
           "minimum": 1,
-          "maximum": 65535
+          "maximum": 65535,
+          "default": 8000
         }
-      },
-      "required": ["type", "port"]
+      }
     },
     "ingress": {
       "type": "object",
+      "description": "Kubernetes Ingress configuration for external RPC access.",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Enable Ingress resource creation.",
+          "default": false
         },
         "className": {
-          "type": "string"
+          "type": "string",
+          "description": "IngressClass name (e.g. 'nginx', 'traefik').",
+          "default": ""
+        },
+        "annotations": {
+          "type": "object",
+          "description": "Annotations to add to the Ingress resource.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
         },
         "hosts": {
           "type": "array",
+          "description": "List of Ingress host rules.",
+          "default": [],
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "properties": {
               "host": {
-                "type": "string"
+                "type": "string",
+                "description": "Fully qualified domain name for the host rule."
               },
               "paths": {
                 "type": "array",
+                "description": "List of path rules for this host.",
                 "items": {
                   "type": "object",
+                  "additionalProperties": false,
                   "properties": {
                     "path": {
-                      "type": "string"
+                      "type": "string",
+                      "description": "URL path (e.g. '/').",
+                      "default": "/"
                     },
                     "pathType": {
                       "type": "string",
-                      "enum": ["Prefix", "Exact", "ImplementationSpecific"]
+                      "description": "Kubernetes path type.",
+                      "enum": ["Prefix", "Exact", "ImplementationSpecific"],
+                      "default": "Prefix"
                     }
                   },
                   "required": ["path", "pathType"]
                 }
               }
-            }
+            },
+            "required": ["host", "paths"]
           }
         },
         "tls": {
           "type": "array",
+          "description": "TLS configuration for Ingress.",
+          "default": [],
           "items": {
             "type": "object",
+            "additionalProperties": false,
             "properties": {
               "secretName": {
-                "type": "string"
+                "type": "string",
+                "description": "Name of the Kubernetes Secret containing the TLS certificate and key."
               },
               "hosts": {
                 "type": "array",
+                "description": "List of hostnames covered by this TLS certificate.",
                 "items": {
                   "type": "string"
                 }
               }
-            }
+            },
+            "required": ["secretName", "hosts"]
           }
         }
-      },
-      "required": ["enabled"]
+      }
     },
     "traffic": {
       "type": "object",
+      "description": "Transaction generator CronJob for load testing.",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Enable the transaction generator CronJob.",
+          "default": false
         },
         "interval": {
-          "type": "string"
+          "type": "string",
+          "description": "Cron schedule expression (e.g. '*/5 * * * *' for every 5 minutes).",
+          "default": "*/5 * * * *"
         },
         "txCount": {
           "type": "integer",
+          "description": "Number of transactions to submit per CronJob run.",
           "minimum": 1,
-          "maximum": 1000
+          "default": 10
         }
-      },
-      "required": ["enabled"]
+      }
     },
     "dashboard": {
       "type": "object",
+      "description": "Dashboard UI (future enhancement, currently unused).",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Enable the dashboard. Reserved for future use.",
+          "default": false
         }
-      },
-      "required": ["enabled"]
+      }
     },
     "consensus": {
       "type": "object",
+      "description": "Consensus protocol parameters passed to each node via environment variables.",
+      "additionalProperties": false,
       "properties": {
         "bootstrapStart": {
           "type": "integer",
-          "minimum": 1
+          "description": "Block height at which bootstrap consensus begins.",
+          "minimum": 0,
+          "default": 1000
         },
         "bootstrapEnd": {
           "type": "integer",
-          "minimum": 1
+          "description": "Block height at which bootstrap consensus ends and normal consensus takes over.",
+          "minimum": 0,
+          "default": 6000
         },
         "confirmationDepth": {
           "type": "integer",
-          "minimum": 1
+          "description": "Number of confirmations (depth in the DAG) required before a block is considered finalized.",
+          "minimum": 1,
+          "default": 6
         },
         "curvatureMethod": {
           "type": "string",
-          "enum": ["jaccard"]
+          "description": "Method used to compute DAG curvature for consensus scoring.",
+          "default": "jaccard"
         },
         "fixedPointScale": {
           "type": "integer",
-          "minimum": 1
+          "description": "Fixed-point arithmetic scale factor used in consensus calculations.",
+          "minimum": 1,
+          "default": 65536
         }
       }
     },
     "pow": {
       "type": "object",
+      "description": "Proof-of-Work mining parameters.",
+      "additionalProperties": false,
       "properties": {
         "difficulty": {
           "type": "integer",
+          "description": "Number of leading zero bits required in a valid block hash.",
           "minimum": 1,
-          "maximum": 64
+          "default": 16
         },
         "mineIntervalSecs": {
           "type": "integer",
-          "minimum": 1
+          "description": "Minimum number of seconds between mining attempts.",
+          "minimum": 1,
+          "default": 10
         }
       }
     },
     "podSecurityContext": {
-      "type": "object"
+      "type": "object",
+      "description": "Pod-level security context applied to the StatefulSet. Follows the Kubernetes PodSecurityContext API.",
+      "additionalProperties": true,
+      "properties": {
+        "runAsNonRoot": {
+          "type": "boolean",
+          "description": "Require all containers in the pod to run as a non-root user.",
+          "default": true
+        },
+        "fsGroup": {
+          "type": "integer",
+          "description": "GID applied to all volumes mounted by the pod. Kubernetes chowns volume contents to this GID.",
+          "default": 1000
+        },
+        "seccompProfile": {
+          "type": "object",
+          "description": "Seccomp profile for the pod.",
+          "additionalProperties": true,
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Seccomp profile type.",
+              "enum": ["RuntimeDefault", "Unconfined", "Localhost"],
+              "default": "RuntimeDefault"
+            }
+          }
+        }
+      }
     },
     "securityContext": {
-      "type": "object"
+      "type": "object",
+      "description": "Container-level security context for the disentangle-node container. Follows the Kubernetes SecurityContext API.",
+      "additionalProperties": true,
+      "properties": {
+        "allowPrivilegeEscalation": {
+          "type": "boolean",
+          "description": "Whether the container process can gain more privileges than its parent.",
+          "default": false
+        },
+        "capabilities": {
+          "type": "object",
+          "description": "Linux capabilities to add or drop.",
+          "additionalProperties": true,
+          "properties": {
+            "drop": {
+              "type": "array",
+              "description": "List of capabilities to drop.",
+              "items": {
+                "type": "string"
+              },
+              "default": ["ALL"]
+            },
+            "add": {
+              "type": "array",
+              "description": "List of capabilities to add.",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "readOnlyRootFilesystem": {
+          "type": "boolean",
+          "description": "Mount the root filesystem as read-only. Disabled because the node needs to write state files.",
+          "default": false
+        },
+        "runAsNonRoot": {
+          "type": "boolean",
+          "description": "Require the container to run as a non-root user.",
+          "default": true
+        },
+        "runAsUser": {
+          "type": "integer",
+          "description": "UID to run the container process as.",
+          "default": 1000
+        }
+      }
+    },
+    "nebula": {
+      "type": "object",
+      "description": "Nebula-PQ post-quantum encrypted overlay mesh network.",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the Nebula-PQ overlay mesh. Deploys a DaemonSet with the nebula-pq agent.",
+          "default": false
+        },
+        "image": {
+          "type": "object",
+          "description": "Container image for the Nebula-PQ agent.",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "description": "Nebula-PQ image registry and repository.",
+              "default": "ghcr.io/disentangle-network/nebula-pq"
+            },
+            "tag": {
+              "type": "string",
+              "description": "Nebula-PQ image tag.",
+              "default": "1.11.0-pq.1"
+            },
+            "pullPolicy": {
+              "type": "string",
+              "description": "Kubernetes image pull policy for the Nebula-PQ image.",
+              "enum": ["Always", "IfNotPresent", "Never"],
+              "default": "IfNotPresent"
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "description": "CPU and memory resource requests and limits for the Nebula-PQ container.",
+          "additionalProperties": true,
+          "properties": {
+            "limits": {
+              "type": "object",
+              "description": "Resource limits for Nebula-PQ.",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "default": "200m"
+                },
+                "memory": {
+                  "type": "string",
+                  "default": "128Mi"
+                }
+              }
+            },
+            "requests": {
+              "type": "object",
+              "description": "Resource requests for Nebula-PQ.",
+              "additionalProperties": true,
+              "properties": {
+                "cpu": {
+                  "type": "string",
+                  "default": "50m"
+                },
+                "memory": {
+                  "type": "string",
+                  "default": "64Mi"
+                }
+              }
+            }
+          }
+        },
+        "mode": {
+          "type": "string",
+          "description": "Nebula node mode. 'lighthouse' acts as the coordination server; 'node' connects to a lighthouse.",
+          "enum": ["lighthouse", "node"],
+          "default": "node"
+        },
+        "overlayCidr": {
+          "type": "string",
+          "description": "CIDR block for the Nebula overlay network. Reserved for future networkpolicy/tun configuration.",
+          "default": "10.42.0.0/16"
+        },
+        "lighthouseAddr": {
+          "type": "string",
+          "description": "Lighthouse address in ip:port format. Required when mode is 'node'.",
+          "default": ""
+        },
+        "port": {
+          "type": "integer",
+          "description": "UDP port for Nebula tunnel traffic.",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 4242
+        },
+        "certSecretName": {
+          "type": "string",
+          "description": "Name of the Kubernetes Secret containing Nebula certificates (created by 'launch mesh add', SOPS-encrypted).",
+          "default": "nebula-certs"
+        },
+        "firewall": {
+          "type": "object",
+          "description": "Nebula firewall rules controlling traffic through the overlay.",
+          "additionalProperties": false,
+          "properties": {
+            "outbound": {
+              "type": "array",
+              "description": "Outbound firewall rules. Each rule specifies port, proto, and host.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "port": {
+                    "description": "Port number or 'any'.",
+                    "oneOf": [
+                      { "type": "integer", "minimum": 1, "maximum": 65535 },
+                      { "type": "string", "enum": ["any"] }
+                    ]
+                  },
+                  "proto": {
+                    "type": "string",
+                    "description": "Protocol: 'tcp', 'udp', 'icmp', or 'any'.",
+                    "enum": ["tcp", "udp", "icmp", "any"]
+                  },
+                  "host": {
+                    "type": "string",
+                    "description": "Target host or 'any'."
+                  }
+                },
+                "required": ["port", "proto", "host"]
+              }
+            },
+            "inbound": {
+              "type": "array",
+              "description": "Inbound firewall rules. Each rule specifies port, proto, and optionally groups or host.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "port": {
+                    "description": "Port number or 'any'.",
+                    "oneOf": [
+                      { "type": "integer", "minimum": 1, "maximum": 65535 },
+                      { "type": "string", "enum": ["any"] }
+                    ]
+                  },
+                  "proto": {
+                    "type": "string",
+                    "description": "Protocol: 'tcp', 'udp', 'icmp', or 'any'.",
+                    "enum": ["tcp", "udp", "icmp", "any"]
+                  },
+                  "host": {
+                    "type": "string",
+                    "description": "Source host or 'any'."
+                  },
+                  "groups": {
+                    "type": "array",
+                    "description": "Nebula groups allowed by this rule.",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["port", "proto"]
+              }
+            }
+          }
+        }
+      }
     },
     "nodeSelector": {
-      "type": "object"
+      "type": "object",
+      "description": "Kubernetes nodeSelector for pod scheduling. Keys and values are label selectors.",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {}
     },
     "tolerations": {
-      "type": "array"
+      "type": "array",
+      "description": "Kubernetes tolerations for pod scheduling.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
     },
     "affinity": {
-      "type": "object"
+      "type": "object",
+      "description": "Kubernetes affinity rules for pod scheduling.",
+      "additionalProperties": true,
+      "default": {}
     },
     "networkPolicy": {
       "type": "object",
+      "description": "Kubernetes NetworkPolicy configuration.",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Enable NetworkPolicy resource creation to restrict pod traffic.",
+          "default": false
         }
-      },
-      "required": ["enabled"]
+      }
     },
     "podDisruptionBudget": {
       "type": "object",
+      "description": "PodDisruptionBudget configuration. Only created when enabled and nodes.count > 2.",
+      "additionalProperties": false,
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Enable PodDisruptionBudget creation.",
+          "default": true
         },
         "minAvailable": {
-          "type": ["integer", "string"]
+          "description": "Minimum number of available pods during voluntary disruptions. Empty string defaults to (nodes.count / 2) + 1.",
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string" }
+          ],
+          "default": ""
         }
-      },
-      "required": ["enabled"]
+      }
     }
-  },
-  "required": [
-    "image",
-    "nodes",
-    "persistence",
-    "resources",
-    "serviceAccount",
-    "rpcService",
-    "ingress",
-    "traffic",
-    "consensus",
-    "pow",
-    "networkPolicy",
-    "podDisruptionBudget"
-  ]
+  }
 }
