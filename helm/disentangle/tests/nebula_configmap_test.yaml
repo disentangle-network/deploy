@@ -1,0 +1,101 @@
+suite: Nebula ConfigMap tests
+templates:
+  - templates/nebula-configmap.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should not render when nebula.enabled is false (default)
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render ConfigMap when nebula.enabled is true
+    set:
+      nebula.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+
+  - it: config should set PQ curve
+    set:
+      nebula.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "curve: PQ"
+
+  - it: config should configure lighthouse mode
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "am_lighthouse: true"
+
+  - it: config should configure node mode by default
+    set:
+      nebula.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "am_lighthouse: false"
+
+  - it: config should use lighthouse address in node mode
+    set:
+      nebula.enabled: true
+      nebula.lighthouseAddr: "10.0.0.1:4242"
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "10.0.0.1:4242"
+
+  - it: config should use custom port
+    set:
+      nebula.enabled: true
+      nebula.port: 5555
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "port: 5555"
+
+  - it: config should render firewall rules
+    set:
+      nebula.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "firewall:"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "outbound:"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "inbound:"
+
+  - it: should have correct metadata labels
+    set:
+      nebula.enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should have nebula component label
+    set:
+      nebula.enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: nebula

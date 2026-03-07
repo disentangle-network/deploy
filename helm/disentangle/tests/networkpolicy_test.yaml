@@ -1,0 +1,156 @@
+suite: NetworkPolicy tests
+templates:
+  - templates/networkpolicy.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should NOT render when networkPolicy.enabled is false (default)
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render NetworkPolicy when enabled
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: NetworkPolicy
+      - equal:
+          path: apiVersion
+          value: networking.k8s.io/v1
+
+  - it: should have both Ingress and Egress policy types
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - contains:
+          path: spec.policyTypes
+          content: Ingress
+      - contains:
+          path: spec.policyTypes
+          content: Egress
+      - lengthEqual:
+          path: spec.policyTypes
+          count: 2
+
+  - it: should allow P2P ingress on default port
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports[0].port
+          value: 9000
+      - equal:
+          path: spec.ingress[0].ports[0].protocol
+          value: TCP
+
+  - it: should allow RPC ingress on default port
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[1].ports[0].port
+          value: 8000
+      - equal:
+          path: spec.ingress[1].ports[0].protocol
+          value: TCP
+
+  - it: should allow P2P egress
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.egress[0].ports[0].port
+          value: 9000
+      - equal:
+          path: spec.egress[0].ports[0].protocol
+          value: TCP
+
+  - it: should allow DNS egress
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.egress[1].ports[0].port
+          value: 53
+      - equal:
+          path: spec.egress[1].ports[0].protocol
+          value: UDP
+      - equal:
+          path: spec.egress[1].ports[1].port
+          value: 53
+      - equal:
+          path: spec.egress[1].ports[1].protocol
+          value: TCP
+
+  - it: should use custom ports
+    set:
+      networkPolicy.enabled: true
+      nodes.p2pPort: 9999
+      nodes.rpcPort: 7777
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports[0].port
+          value: 9999
+      - equal:
+          path: spec.ingress[1].ports[0].port
+          value: 7777
+      - equal:
+          path: spec.egress[0].ports[0].port
+          value: 9999
+
+  - it: should include ingress-nginx rule when ingress enabled
+    set:
+      networkPolicy.enabled: true
+      ingress.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.ingress
+          count: 3
+      - equal:
+          path: spec.ingress[2].from[0].namespaceSelector.matchLabels["kubernetes.io/metadata.name"]
+          value: ingress-nginx
+      - equal:
+          path: spec.ingress[2].ports[0].port
+          value: 8000
+
+  - it: should NOT include ingress-nginx rule when ingress disabled
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.ingress
+          count: 2
+
+  - it: should have correct metadata labels
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-release-disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
+
+  - it: should have correct pod selector labels
+    set:
+      networkPolicy.enabled: true
+    asserts:
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/instance"]
+          value: test-release

@@ -1,0 +1,115 @@
+suite: Nebula DaemonSet tests
+templates:
+  - templates/nebula-daemonset.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should not render when nebula.enabled is false (default)
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render DaemonSet when nebula.enabled is true
+    set:
+      nebula.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: DaemonSet
+
+  - it: should use correct default image
+    set:
+      nebula.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/disentangle-network/nebula-pq:1.11.0-pq.1"
+
+  - it: should use custom image tag
+    set:
+      nebula.enabled: true
+      nebula.image.tag: "2.0.0"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "ghcr.io/disentangle-network/nebula-pq:2.0.0"
+
+  - it: should use hostNetwork
+    set:
+      nebula.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.hostNetwork
+          value: true
+
+  - it: should have NET_ADMIN capability
+    set:
+      nebula.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].securityContext.capabilities.add
+          content: NET_ADMIN
+
+  - it: should mount nebula config, certs, and tun volumes
+    set:
+      nebula.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].volumeMounts
+          count: 3
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nebula-config
+            mountPath: /etc/nebula
+            readOnly: true
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nebula-certs
+            mountPath: /etc/nebula/certs
+            readOnly: true
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tun
+            mountPath: /dev/net/tun
+
+  - it: should use custom cert secret name
+    set:
+      nebula.enabled: true
+      nebula.certSecretName: "my-certs"
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[1].secret.secretName
+          value: "my-certs"
+
+  - it: should use custom port
+    set:
+      nebula.enabled: true
+      nebula.port: 5555
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 5555
+
+  - it: should have correct labels including component label
+    set:
+      nebula.enabled: true
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: nebula
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]

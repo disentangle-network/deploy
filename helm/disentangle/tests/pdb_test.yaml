@@ -1,0 +1,94 @@
+suite: PodDisruptionBudget tests
+templates:
+  - templates/pdb.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should render PDB with defaults (enabled=true, count=5)
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: apiVersion
+          value: policy/v1
+
+  - it: should NOT render when disabled
+    set:
+      podDisruptionBudget.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should NOT render when nodes.count is 2
+    set:
+      nodes.count: 2
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should NOT render when nodes.count is 1
+    set:
+      nodes.count: 1
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render when nodes.count is 3
+    set:
+      nodes.count: 3
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PodDisruptionBudget
+
+  - it: should calculate default minAvailable as (count/2)+1 for count=5
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 3
+
+  - it: should calculate minAvailable for count=4
+    set:
+      nodes.count: 4
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 3
+
+  - it: should use custom minAvailable
+    set:
+      podDisruptionBudget.minAvailable: 4
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 4
+
+  - it: should have correct selector labels
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: spec.selector.matchLabels["app.kubernetes.io/instance"]
+          value: test-release
+
+  - it: should have correct metadata labels
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-release-disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+      - isNotNull:
+          path: metadata.labels["helm.sh/chart"]
