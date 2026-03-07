@@ -1,0 +1,55 @@
+# Cloudflare Tunnel configuration
+# Requires a tunnel token from the Cloudflare Zero Trust dashboard
+# Create at: https://one.dash.cloudflare.com/ -> Networks -> Tunnels
+
+# Tunnel authentication
+tunnel:
+  # Existing secret name containing the tunnel token
+  # The secret must have key 'token' with the tunnel token value
+  existingSecret: ""
+  # Or specify the token directly (not recommended for production)
+  token: ""
+
+image:
+  repository: cloudflare/cloudflared
+  tag: ""  # defaults to appVersion
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Pod security
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65532  # nonroot user
+
+# Ingress rules for the tunnel
+# Maps external hostnames to internal K8s services
+ingressRules: []
+  # - hostname: rpc.disentangle.network
+  #   service: http://disentangle-rpc.disentangle.svc.cluster.local:8000
+  # - hostname: grafana.disentangle.network
+  #   service: http://disentangle-monitoring-grafana.monitoring.svc.cluster.local:80
+
+# Catch-all rule for unmatched requests
+catchAllService: http_status:404
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
