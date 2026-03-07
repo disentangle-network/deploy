@@ -51,6 +51,8 @@ jobs:
       - uses: azure/setup-helm@v4
         with:
           version: v3.14.0
+      - name: Add VictoriaMetrics Helm repo
+        run: helm repo add vm https://victoriametrics.github.io/helm-charts/ && helm repo update
       - name: Build dependencies
         run: helm dependency build helm/monitoring/
       - name: Lint monitoring chart
