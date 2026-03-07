@@ -44,6 +44,20 @@ jobs:
             --set traffic.enabled=true \
             --set dashboard.enabled=true > /dev/null
 
+  monitoring-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+      - name: Build dependencies
+        run: helm dependency build helm/monitoring/
+      - name: Lint monitoring chart
+        run: helm lint helm/monitoring/
+      - name: Template monitoring chart
+        run: helm template monitoring helm/monitoring/ > /dev/null
+
   kubeconform:
     runs-on: ubuntu-latest
     needs: helm-template
@@ -83,7 +97,7 @@ jobs:
         run: pip install yamllint
       - name: Lint YAML files
         run: |
-          yamllint -d relaxed helm/disentangle/Chart.yaml helm/disentangle/values.yaml helm/disentangle/values.schema.json gitops/
+          yamllint -d relaxed helm/disentangle/Chart.yaml helm/disentangle/values.yaml helm/disentangle/values.schema.json helm/monitoring/Chart.yaml helm/monitoring/values.yaml gitops/
 
   helm-unittest:
     runs-on: ubuntu-latest

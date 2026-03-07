@@ -1,0 +1,196 @@
+# Monitoring stack values tuned for Oracle Cloud Always Free tier
+# 2 ARM64 nodes, 4 OCPUs + 24GB RAM each, limited block volume quota
+#
+# Total monitoring resource budget (requests):
+#   CPU:  ~400m  (of 8000m available across 2 nodes)
+#   RAM:  ~576Mi (of 48Gi available across 2 nodes)
+
+victoria-metrics-k8s-stack:
+
+  # --- VMSingle (metrics storage) ---
+  vmsingle:
+    enabled: true
+    spec:
+      retentionPeriod: "7d"
+      replicaCount: 1
+      extraArgs: {}
+      # Use emptyDir instead of PVC to avoid consuming block volume quota
+      # (OCI Always Free tier: 200Gi total, 150Gi already used by protocol nodes)
+      storage: {}
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: vmsingle
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+
+  # --- VMAgent (scrape + remote write) ---
+  vmagent:
+    enabled: true
+    spec:
+      port: "8429"
+      selectAllByDefault: true
+      scrapeInterval: 30s
+      extraArgs:
+        promscrape.streamParse: "true"
+        promscrape.dropOriginalLabels: "true"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: vmagent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+
+  # --- VMAlert (recording rules evaluation) ---
+  # Kept enabled for recording rules but with minimal resources
+  vmalert:
+    enabled: true
+    spec:
+      port: "8080"
+      selectAllByDefault: true
+      evaluationInterval: 30s
+      extraArgs:
+        http.pathPrefix: "/"
+        # Alertmanager is disabled; sink alert notifications to blackhole
+        notifier.blackhole: "true"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+
+  # --- Alertmanager (DISABLED - not needed for initial deployment) ---
+  alertmanager:
+    enabled: false
+
+  # --- Grafana ---
+  grafana:
+    enabled: true
+    # Use emptyDir for SQLite database (no PVC needed)
+    persistence:
+      enabled: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 472
+      runAsGroup: 472
+      fsGroup: 472
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: false
+      seccompProfile:
+        type: RuntimeDefault
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        folder: /var/lib/grafana/dashboards
+        defaultFolderName: default
+        provider:
+          name: default
+          orgid: 1
+      datasources:
+        enabled: true
+        label: grafana_datasource
+        labelValue: "1"
+
+  # --- Node Exporter (DaemonSet - runs on each node) ---
+  prometheus-node-exporter:
+    enabled: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    service:
+      labels:
+        jobLabel: node-exporter
+    extraArgs:
+      - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+      - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|erofs|sysfs|tracefs)$
+
+  # --- Kube State Metrics ---
+  kube-state-metrics:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  # --- VMAuth (not needed for single-node setup) ---
+  vmauth:
+    enabled: false
+
+  # --- VMCluster (not needed - using VMSingle) ---
+  vmcluster:
+    enabled: false
+
+  # --- Operator ---
+  victoria-metrics-operator:
+    enabled: true
+    crds:
+      plain: true
+      cleanup:
+        enabled: true
+    operator:
+      disable_prometheus_converter: false
+
+  # --- Default dashboards ---
+  defaultDashboards:
+    enabled: true
+    defaultTimezone: utc
+
+  # --- Default rules (recording + alerting) ---
+  defaultRules:
+    create: true
+
+  # TODO: Add custom Grafana dashboard ConfigMaps for Disentangle-specific
+  # metrics (P2P peers, DAG height, mining rate, RPC latency) once the
+  # protocol node exposes a Prometheus /metrics endpoint.
