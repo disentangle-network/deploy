@@ -1,6 +1,7 @@
-.PHONY: help lint test test-unit test-golden test-policy test-integration test-all clean lint-tunnel template-tunnel
+.PHONY: help lint test test-unit test-golden test-policy test-integration test-all clean lint-monitoring template-monitoring deps-monitoring lint-tunnel template-tunnel
 
 CHART_DIR := helm/disentangle
+MONITORING_CHART_DIR := helm/monitoring
 TUNNEL_CHART_DIR := helm/cloudflare-tunnel
 NAMESPACE := disentangle-test
 RELEASE := test-release
@@ -10,10 +11,19 @@ help: ## Show this help
 
 # === Linting ===
 
-lint: lint-helm lint-tunnel lint-yaml lint-shell ## Run all linters
+lint: lint-helm lint-monitoring lint-tunnel lint-yaml lint-shell ## Run all linters
 
 lint-helm: ## Lint Helm chart
 	helm lint $(CHART_DIR)
+
+lint-monitoring: ## Lint monitoring chart
+	helm lint $(MONITORING_CHART_DIR)
+
+template-monitoring: ## Render monitoring chart templates
+	helm template monitoring $(MONITORING_CHART_DIR) > /dev/null
+
+deps-monitoring: ## Build monitoring chart dependencies
+	helm dependency build $(MONITORING_CHART_DIR)
 
 lint-tunnel: ## Lint cloudflare-tunnel chart
 	helm lint $(TUNNEL_CHART_DIR)

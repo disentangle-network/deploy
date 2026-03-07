@@ -10,6 +10,7 @@ Thumbs.db
 
 # Helm
 helm/disentangle/charts/
+helm/monitoring/charts/
 helm/cloudflare-tunnel/charts/
 *.tgz
 .helm/
