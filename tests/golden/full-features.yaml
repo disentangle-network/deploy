@@ -5,7 +5,7 @@ kind: PodDisruptionBudget
 metadata:
   name: golden-test-disentangle
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -23,7 +23,7 @@ kind: ServiceAccount
 metadata:
   name: golden-test-disentangle
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -35,7 +35,7 @@ kind: ConfigMap
 metadata:
   name: golden-test-disentangle-config
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -64,7 +64,7 @@ kind: Service
 metadata:
   name: golden-test-disentangle-headless
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -91,7 +91,7 @@ kind: Service
 metadata:
   name: golden-test-disentangle-rpc
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -113,7 +113,7 @@ kind: StatefulSet
 metadata:
   name: golden-test-disentangle
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -218,7 +218,7 @@ kind: CronJob
 metadata:
   name: golden-test-disentangle-txgen
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -310,7 +310,7 @@ kind: Ingress
 metadata:
   name: golden-test-disentangle
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -335,7 +335,7 @@ kind: Pod
 metadata:
   name: golden-test-disentangle-test-connection
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -415,7 +415,7 @@ kind: Pod
 metadata:
   name: golden-test-disentangle-test-genesis
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"
@@ -503,7 +503,7 @@ kind: Pod
 metadata:
   name: golden-test-disentangle-test-rpc
   labels:
-    helm.sh/chart: disentangle-0.2.0
+    helm.sh/chart: disentangle-0.3.0
     app.kubernetes.io/name: disentangle
     app.kubernetes.io/instance: golden-test
     app.kubernetes.io/version: "v0.4.1"

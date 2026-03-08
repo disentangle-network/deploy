@@ -60,7 +60,7 @@ spec:
             - name: tun
               mountPath: /dev/net/tun
           command:
-            - nebula
+            - /nebula
             - -config
             - /etc/nebula/config.yaml
       volumes:
