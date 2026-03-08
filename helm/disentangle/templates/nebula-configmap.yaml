@@ -14,9 +14,24 @@ data:
       key: /etc/nebula/certs/host.key
       curve: PQ
 
+    {{- if .Values.nebula.staticHostMap }}
+    static_host_map:
+      {{- range $vpnIP, $realAddr := .Values.nebula.staticHostMap }}
+      "{{ $vpnIP }}": ["{{ $realAddr }}"]
+      {{- end }}
+    {{- else }}
+    static_host_map: {}
+    {{- end }}
+
     {{- if eq .Values.nebula.mode "lighthouse" }}
     lighthouse:
       am_lighthouse: true
+      {{- if .Values.nebula.lighthouse.advertiseAddrs }}
+      advertise_addrs:
+        {{- range .Values.nebula.lighthouse.advertiseAddrs }}
+        - "{{ . }}"
+        {{- end }}
+      {{- end }}
     {{- else }}
     lighthouse:
       am_lighthouse: false
@@ -24,15 +39,36 @@ data:
         - "{{ .Values.nebula.lighthouseAddr }}"
     {{- end }}
 
+    {{- if .Values.nebula.staticMap.cadence }}
+    static_map:
+      cadence: {{ .Values.nebula.staticMap.cadence }}
+      network: {{ .Values.nebula.staticMap.network }}
+    {{- end }}
+
     listen:
       host: 0.0.0.0
       port: {{ .Values.nebula.port }}
 
     punchy:
-      punch: true
+      punch: {{ .Values.nebula.punchy.punch }}
+      respond: {{ .Values.nebula.punchy.respond }}
+      delay: {{ .Values.nebula.punchy.delay }}
+      respond_delay: {{ .Values.nebula.punchy.respondDelay }}
+
+    {{- if .Values.nebula.relay.enabled }}
+    relay:
+      am_relay: true
+    {{- else if .Values.nebula.relay.relays }}
+    relay:
+      am_relay: false
+      relays:
+        {{- range .Values.nebula.relay.relays }}
+        - "{{ . }}"
+        {{- end }}
+    {{- end }}
 
     tun:
-      disabled: false
+      disabled: {{ .Values.nebula.tun.disabled }}
       dev: nebula1
 
     firewall:

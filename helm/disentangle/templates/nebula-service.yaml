@@ -1,0 +1,23 @@
+{{- if and .Values.nebula.enabled (eq .Values.nebula.mode "lighthouse") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "disentangle.fullname" . }}-nebula-lighthouse
+  labels:
+    {{- include "disentangle.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nebula
+  {{- with .Values.nebula.lighthouse.serviceAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: {{ .Values.nebula.port }}
+      targetPort: {{ .Values.nebula.port }}
+      protocol: UDP
+      name: nebula
+  selector:
+    {{- include "disentangle.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: nebula
+{{- end }}

@@ -1,0 +1,118 @@
+suite: Nebula Lighthouse Service tests
+templates:
+  - templates/nebula-service.yaml
+release:
+  name: test-release
+  namespace: default
+tests:
+  - it: should not render when nebula is disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when nebula is enabled but mode is node
+    set:
+      nebula.enabled: true
+      nebula.mode: node
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render Service when nebula is enabled and mode is lighthouse
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+
+  - it: should be type LoadBalancer
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: should use the configured port
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+      nebula.port: 5555
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 5555
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 5555
+
+  - it: should use UDP protocol
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - equal:
+          path: spec.ports[0].protocol
+          value: UDP
+
+  - it: should have correct selector labels
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - equal:
+          path: spec.selector["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: spec.selector["app.kubernetes.io/instance"]
+          value: test-release
+      - equal:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: nebula
+
+  - it: should have correct metadata labels
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: nebula
+      - equal:
+          path: metadata.labels["app.kubernetes.io/name"]
+          value: disentangle
+      - equal:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+          value: Helm
+
+  - it: should render service annotations when set
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+      nebula.lighthouse.serviceAnnotations:
+        oci.oraclecloud.com/load-balancer-type: nlb
+    asserts:
+      - equal:
+          path: metadata.annotations["oci.oraclecloud.com/load-balancer-type"]
+          value: nlb
+
+  - it: should not render annotations when empty
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - isNull:
+          path: metadata.annotations
+
+  - it: should have correct service name
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - equal:
+          path: metadata.name
+          value: test-release-disentangle-nebula-lighthouse

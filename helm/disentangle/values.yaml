@@ -115,12 +115,40 @@ nebula:
   mode: "node"
   # Overlay network CIDR - reserved for future networkpolicy/tun configuration
   overlayCidr: "10.42.0.0/16"
-  # Lighthouse address (ip:port) - required for mode=node
+  # Lighthouse address (VPN IP) - required for mode=node
   lighthouseAddr: ""
   # Port for nebula UDP traffic
   port: 4242
   # Certificate secret name (created by launch mesh add, SOPS-encrypted)
   certSecretName: "nebula-certs"
+  # Static host map: maps VPN IPs to real addresses for lighthouse discovery
+  staticHostMap: {}
+    # "10.42.0.1": "lighthouse.disentangle.network:4242"
+  # Lighthouse-specific settings
+  lighthouse:
+    # Addresses to advertise (for lighthouses behind NAT/LB)
+    advertiseAddrs: []
+      # - "203.0.113.1:4242"
+    # Annotations for the lighthouse LoadBalancer Service
+    serviceAnnotations: {}
+      # oci.oraclecloud.com/load-balancer-type: nlb
+  # Static map DNS re-resolution
+  staticMap:
+    cadence: ""   # e.g. "30s" - empty disables
+    network: "ip4"
+  # Relay configuration for fallback when hole punching fails
+  relay:
+    enabled: false       # true on lighthouse/relay nodes
+    relays: []           # VPN IPs of relay nodes (for non-relay nodes)
+  # Hole punching configuration
+  punchy:
+    punch: true
+    respond: true
+    delay: "1s"
+    respondDelay: "5s"
+  # TUN device settings
+  tun:
+    disabled: false      # true for lighthouse-only nodes that don't need overlay traffic
   # Firewall rules
   firewall:
     outbound:

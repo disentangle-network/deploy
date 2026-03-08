@@ -516,7 +516,7 @@
         },
         "lighthouseAddr": {
           "type": "string",
-          "description": "Lighthouse address in ip:port format. Required when mode is 'node'.",
+          "description": "Lighthouse VPN IP address. Required when mode is 'node'.",
           "default": ""
         },
         "port": {
@@ -530,6 +530,114 @@
           "type": "string",
           "description": "Name of the Kubernetes Secret containing Nebula certificates (created by 'launch mesh add', SOPS-encrypted).",
           "default": "nebula-certs"
+        },
+        "staticHostMap": {
+          "type": "object",
+          "description": "Maps VPN IPs to real addresses for lighthouse discovery. Keys are VPN IPs, values are real host:port addresses.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        },
+        "lighthouse": {
+          "type": "object",
+          "description": "Lighthouse-specific settings.",
+          "additionalProperties": false,
+          "properties": {
+            "advertiseAddrs": {
+              "type": "array",
+              "description": "Addresses to advertise for lighthouses behind NAT or load balancers.",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "serviceAnnotations": {
+              "type": "object",
+              "description": "Annotations for the lighthouse LoadBalancer Service (e.g. OCI NLB annotations).",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "default": {}
+            }
+          }
+        },
+        "staticMap": {
+          "type": "object",
+          "description": "DNS re-resolution settings for static_host_map entries using DNS names.",
+          "additionalProperties": false,
+          "properties": {
+            "cadence": {
+              "type": "string",
+              "description": "How often to re-resolve DNS names in static_host_map (e.g. '30s'). Empty string disables.",
+              "default": ""
+            },
+            "network": {
+              "type": "string",
+              "description": "Network type for DNS resolution.",
+              "enum": ["ip4", "ip6"],
+              "default": "ip4"
+            }
+          }
+        },
+        "relay": {
+          "type": "object",
+          "description": "Relay configuration for fallback when hole punching fails.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether this node acts as a relay. Lighthouses should typically double as relays.",
+              "default": false
+            },
+            "relays": {
+              "type": "array",
+              "description": "VPN IPs of relay nodes to use when this node is not itself a relay.",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            }
+          }
+        },
+        "punchy": {
+          "type": "object",
+          "description": "NAT hole punching configuration.",
+          "additionalProperties": false,
+          "properties": {
+            "punch": {
+              "type": "boolean",
+              "description": "Enable NAT hole punching.",
+              "default": true
+            },
+            "respond": {
+              "type": "boolean",
+              "description": "Respond to hole punch attempts from peers.",
+              "default": true
+            },
+            "delay": {
+              "type": "string",
+              "description": "Delay before sending hole punch packets.",
+              "default": "1s"
+            },
+            "respondDelay": {
+              "type": "string",
+              "description": "Delay before responding to hole punch attempts.",
+              "default": "5s"
+            }
+          }
+        },
+        "tun": {
+          "type": "object",
+          "description": "TUN device settings for the Nebula overlay.",
+          "additionalProperties": false,
+          "properties": {
+            "disabled": {
+              "type": "boolean",
+              "description": "Disable the TUN device. Set true for lighthouse-only nodes that don't need overlay traffic.",
+              "default": false
+            }
+          }
         },
         "firewall": {
           "type": "object",

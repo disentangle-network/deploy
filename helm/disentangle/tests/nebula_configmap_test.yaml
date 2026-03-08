@@ -47,11 +47,11 @@ tests:
   - it: config should use lighthouse address in node mode
     set:
       nebula.enabled: true
-      nebula.lighthouseAddr: "10.0.0.1:4242"
+      nebula.lighthouseAddr: "10.0.0.1"
     asserts:
       - matchRegex:
           path: data["config.yaml"]
-          pattern: "10.0.0.1:4242"
+          pattern: "10.0.0.1"
 
   - it: config should use custom port
     set:
@@ -99,3 +99,172 @@ tests:
       - equal:
           path: metadata.labels["app.kubernetes.io/component"]
           value: nebula
+
+  # --- static_host_map tests ---
+
+  - it: config should render empty static_host_map by default
+    set:
+      nebula.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "static_host_map: \\{\\}"
+
+  - it: config should render static_host_map entries
+    set:
+      nebula.enabled: true
+      nebula.staticHostMap:
+        "10.42.0.1": "lighthouse.example.com:4242"
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "static_host_map:"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: '"10.42.0.1".*"lighthouse.example.com:4242"'
+
+  # --- relay tests ---
+
+  - it: config should render relay am_relay when relay is enabled
+    set:
+      nebula.enabled: true
+      nebula.relay.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "am_relay: true"
+
+  - it: config should render relay relays list for non-relay nodes
+    set:
+      nebula.enabled: true
+      nebula.relay.relays:
+        - "10.42.0.1"
+        - "10.42.0.2"
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "am_relay: false"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: '"10.42.0.1"'
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: '"10.42.0.2"'
+
+  - it: config should not render relay section when disabled and no relays
+    set:
+      nebula.enabled: true
+    asserts:
+      - notMatchRegex:
+          path: data["config.yaml"]
+          pattern: "am_relay:"
+
+  # --- punchy tests ---
+
+  - it: config should render full punchy config with defaults
+    set:
+      nebula.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "punch: true"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "respond: true"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "delay: 1s"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "respond_delay: 5s"
+
+  - it: config should render custom punchy settings
+    set:
+      nebula.enabled: true
+      nebula.punchy.punch: false
+      nebula.punchy.respond: false
+      nebula.punchy.delay: "2s"
+      nebula.punchy.respondDelay: "10s"
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "punch: false"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "respond: false"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "delay: 2s"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "respond_delay: 10s"
+
+  # --- tun.disabled tests ---
+
+  - it: config should render tun disabled false by default
+    set:
+      nebula.enabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "disabled: false"
+
+  - it: config should render tun disabled true when set
+    set:
+      nebula.enabled: true
+      nebula.tun.disabled: true
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "disabled: true"
+
+  # --- advertise_addrs tests ---
+
+  - it: config should not render advertise_addrs by default in lighthouse mode
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+    asserts:
+      - notMatchRegex:
+          path: data["config.yaml"]
+          pattern: "advertise_addrs:"
+
+  - it: config should render advertise_addrs when set in lighthouse mode
+    set:
+      nebula.enabled: true
+      nebula.mode: lighthouse
+      nebula.lighthouse.advertiseAddrs:
+        - "203.0.113.1:4242"
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "advertise_addrs:"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: '"203.0.113.1:4242"'
+
+  # --- static_map DNS cadence tests ---
+
+  - it: config should not render static_map when cadence is empty
+    set:
+      nebula.enabled: true
+    asserts:
+      - notMatchRegex:
+          path: data["config.yaml"]
+          pattern: "static_map:"
+
+  - it: config should render static_map when cadence is set
+    set:
+      nebula.enabled: true
+      nebula.staticMap.cadence: "30s"
+      nebula.staticMap.network: "ip4"
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "static_map:"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "cadence: 30s"
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: "network: ip4"
