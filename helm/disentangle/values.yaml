@@ -102,7 +102,7 @@ nebula:
   enabled: false
   image:
     repository: ghcr.io/disentangle-network/nebula-pq
-    tag: "1.11.0-pq.1"
+    tag: "1.11.0-pq.3"
     pullPolicy: IfNotPresent
   # Init container image for cert selection (busybox for sh + cp)
   initImage:
