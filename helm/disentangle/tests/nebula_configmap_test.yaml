@@ -100,6 +100,31 @@ tests:
           path: metadata.labels["app.kubernetes.io/component"]
           value: nebula
 
+  # --- lighthouseHosts tests ---
+
+  - it: config should use lighthouseHosts list when set in node mode
+    set:
+      nebula.enabled: true
+      nebula.lighthouseHosts:
+        - "10.42.1.1"
+        - "10.42.1.2"
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: '"10.42.1.1"'
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: '"10.42.1.2"'
+
+  - it: config should fall back to lighthouseAddr when lighthouseHosts is empty
+    set:
+      nebula.enabled: true
+      nebula.lighthouseAddr: "10.42.0.1"
+    asserts:
+      - matchRegex:
+          path: data["config.yaml"]
+          pattern: '"10.42.0.1"'
+
   # --- static_host_map tests ---
 
   - it: config should render empty static_host_map by default

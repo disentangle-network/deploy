@@ -539,8 +539,16 @@
         },
         "lighthouseAddr": {
           "type": "string",
-          "description": "Lighthouse VPN IP address. Required when mode is 'node'.",
+          "description": "Lighthouse VPN IP address. Required when mode is 'node' (single lighthouse). Use lighthouseHosts for multiple.",
           "default": ""
+        },
+        "lighthouseHosts": {
+          "type": "array",
+          "description": "List of lighthouse VPN IP addresses. Use for multi-lighthouse setups. Overrides lighthouseAddr when non-empty.",
+          "items": {
+            "type": "string"
+          },
+          "default": []
         },
         "port": {
           "type": "integer",

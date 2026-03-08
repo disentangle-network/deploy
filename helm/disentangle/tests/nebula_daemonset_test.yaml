@@ -25,7 +25,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: "ghcr.io/disentangle-network/nebula-pq:1.11.0-pq.1"
+          value: "ghcr.io/disentangle-network/nebula-pq:1.11.0-pq.4"
 
   - it: should use custom image tag
     set:

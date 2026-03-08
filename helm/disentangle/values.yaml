@@ -102,7 +102,7 @@ nebula:
   enabled: false
   image:
     repository: ghcr.io/disentangle-network/nebula-pq
-    tag: "1.11.0-pq.3"
+    tag: "1.11.0-pq.4"
     pullPolicy: IfNotPresent
   # Init container image for cert selection (busybox for sh + cp)
   initImage:
@@ -120,8 +120,12 @@ nebula:
   mode: "node"
   # Overlay network CIDR - reserved for future networkpolicy/tun configuration
   overlayCidr: "10.42.0.0/16"
-  # Lighthouse address (VPN IP) - required for mode=node
+  # Lighthouse addresses (VPN IPs) - required for mode=node
+  # Use lighthouseHosts list for multiple lighthouses, or lighthouseAddr for single
   lighthouseAddr: ""
+  lighthouseHosts: []
+    # - "10.42.1.1"
+    # - "10.42.1.2"
   # Port for nebula UDP traffic
   port: 4242
   # Certificate secret name (created by launch mesh add, SOPS-encrypted)

@@ -36,7 +36,13 @@ data:
     lighthouse:
       am_lighthouse: false
       hosts:
+        {{- if .Values.nebula.lighthouseHosts }}
+        {{- range .Values.nebula.lighthouseHosts }}
+        - "{{ . }}"
+        {{- end }}
+        {{- else }}
         - "{{ .Values.nebula.lighthouseAddr }}"
+        {{- end }}
     {{- end }}
 
     {{- if .Values.nebula.staticMap.cadence }}
