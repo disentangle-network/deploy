@@ -52,7 +52,7 @@ tests:
           path: spec.template.spec.containers[0].securityContext.capabilities.add
           content: NET_ADMIN
 
-  - it: should mount nebula config, certs, and tun volumes
+  - it: should mount nebula config, selected-certs, and tun volumes
     set:
       nebula.enabled: true
     asserts:
@@ -68,7 +68,7 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
-            name: nebula-certs
+            name: selected-certs
             mountPath: /etc/nebula/certs
             readOnly: true
       - contains:
@@ -113,3 +113,96 @@ tests:
           value: Helm
       - isNotNull:
           path: metadata.labels["helm.sh/chart"]
+
+  # --- Init container tests ---
+
+  - it: should have cert-selector init container
+    set:
+      nebula.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: cert-selector
+
+  - it: init container should use default busybox image
+    set:
+      nebula.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "busybox:1.36"
+
+  - it: init container should use custom image
+    set:
+      nebula.enabled: true
+      nebula.initImage.repository: "alpine"
+      nebula.initImage.tag: "3.19"
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "alpine:3.19"
+
+  - it: init container should have NODE_NAME env from downward API
+    set:
+      nebula.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+
+  - it: init container should mount all-certs and selected-certs volumes
+    set:
+      nebula.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          count: 2
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: all-certs
+            mountPath: /certs
+            readOnly: true
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            name: selected-certs
+            mountPath: /selected
+
+  - it: should have all-certs volume from secret
+    set:
+      nebula.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: all-certs
+            secret:
+              secretName: nebula-certs
+
+  - it: should have selected-certs emptyDir volume backed by memory
+    set:
+      nebula.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: selected-certs
+            emptyDir:
+              medium: Memory
+              sizeLimit: 1Mi
+
+  - it: should have four volumes total
+    set:
+      nebula.enabled: true
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.volumes
+          count: 4

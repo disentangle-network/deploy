@@ -104,6 +104,11 @@ nebula:
     repository: ghcr.io/disentangle-network/nebula-pq
     tag: "1.11.0-pq.1"
     pullPolicy: IfNotPresent
+  # Init container image for cert selection (busybox for sh + cp)
+  initImage:
+    repository: busybox
+    tag: "1.36"
+    pullPolicy: IfNotPresent
   resources:
     limits:
       cpu: 200m
@@ -120,6 +125,7 @@ nebula:
   # Port for nebula UDP traffic
   port: 4242
   # Certificate secret name (created by launch mesh add, SOPS-encrypted)
+  # Expected keys: ca.crt, <nodeName>.crt, <nodeName>.key for each K8s node
   certSecretName: "nebula-certs"
   # Static host map: maps VPN IPs to real addresses for lighthouse discovery
   staticHostMap: {}

@@ -466,6 +466,29 @@
             }
           }
         },
+        "initImage": {
+          "type": "object",
+          "description": "Container image for the cert-selector init container (needs sh and cp).",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "description": "Init container image repository.",
+              "default": "busybox"
+            },
+            "tag": {
+              "type": "string",
+              "description": "Init container image tag.",
+              "default": "1.36"
+            },
+            "pullPolicy": {
+              "type": "string",
+              "description": "Kubernetes image pull policy for the init container.",
+              "enum": ["Always", "IfNotPresent", "Never"],
+              "default": "IfNotPresent"
+            }
+          }
+        },
         "resources": {
           "type": "object",
           "description": "CPU and memory resource requests and limits for the Nebula-PQ container.",

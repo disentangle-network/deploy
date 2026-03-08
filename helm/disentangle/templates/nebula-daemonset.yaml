@@ -19,6 +19,22 @@ spec:
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+        - name: cert-selector
+          image: "{{ .Values.nebula.initImage.repository }}:{{ .Values.nebula.initImage.tag }}"
+          imagePullPolicy: {{ .Values.nebula.initImage.pullPolicy }}
+          command: ['sh', '-c', 'cp /certs/${NODE_NAME}.crt /selected/host.crt && cp /certs/${NODE_NAME}.key /selected/host.key && cp /certs/ca.crt /selected/ca.crt']
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: all-certs
+              mountPath: /certs
+              readOnly: true
+            - name: selected-certs
+              mountPath: /selected
       containers:
         - name: nebula
           image: "{{ .Values.nebula.image.repository }}:{{ .Values.nebula.image.tag }}"
@@ -38,7 +54,7 @@ spec:
             - name: nebula-config
               mountPath: /etc/nebula
               readOnly: true
-            - name: nebula-certs
+            - name: selected-certs
               mountPath: /etc/nebula/certs
               readOnly: true
             - name: tun
@@ -51,9 +67,13 @@ spec:
         - name: nebula-config
           configMap:
             name: {{ include "disentangle.fullname" . }}-nebula-config
-        - name: nebula-certs
+        - name: all-certs
           secret:
             secretName: {{ .Values.nebula.certSecretName }}
+        - name: selected-certs
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
         - name: tun
           hostPath:
             path: /dev/net/tun
