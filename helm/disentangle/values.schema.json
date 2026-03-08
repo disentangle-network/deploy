@@ -554,6 +554,29 @@
           "description": "Name of the Kubernetes Secret containing Nebula certificates (created by 'launch mesh add', SOPS-encrypted).",
           "default": "nebula-certs"
         },
+        "certMount": {
+          "type": "object",
+          "description": "Certificate mount mode for the Nebula sidecar.",
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "type": "string",
+              "description": "Certificate mount mode. 'shared' uses init-container to select from shared Secret. 'perNode' mounts a dedicated Secret directly (enables live cert rotation).",
+              "enum": ["shared", "perNode"],
+              "default": "shared"
+            },
+            "secretName": {
+              "type": "string",
+              "description": "Exact Secret name for perNode mode. If empty, derived from secretPrefix + release fullname.",
+              "default": ""
+            },
+            "secretPrefix": {
+              "type": "string",
+              "description": "Prefix for deriving Secret name in perNode mode when secretName is empty.",
+              "default": "nebula-cert-"
+            }
+          }
+        },
         "staticHostMap": {
           "type": "object",
           "description": "Maps VPN IPs to real addresses for lighthouse discovery. Keys are VPN IPs, values are real host:port addresses.",

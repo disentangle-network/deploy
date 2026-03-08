@@ -127,6 +127,22 @@ nebula:
   # Certificate secret name (created by launch mesh add, SOPS-encrypted)
   # Expected keys: ca.crt, <nodeName>.crt, <nodeName>.key for each K8s node
   certSecretName: "nebula-certs"
+  # Certificate mount mode:
+  #   "shared"  - (default) init-container copies per-node certs from a single
+  #               shared Secret (certSecretName) into an emptyDir. Requires pod
+  #               restart to pick up rotated certs.
+  #   "perNode" - each release mounts its own Secret directly at /etc/nebula/certs.
+  #               Secret name = certMount.secretName or secretPrefix + fullname.
+  #               Enables live cert rotation without pod restart.
+  #               Designed for fleet overlay topology (one overlay identity per cluster).
+  certMount:
+    mode: "shared"
+    # Only used when mode=perNode. Override to set the exact Secret name.
+    # Expected Secret keys: ca.crt, host.crt, host.key
+    secretName: ""
+    # Only used when mode=perNode and secretName is empty. Prefix concatenated
+    # with the Helm release fullname to derive the Secret name.
+    secretPrefix: "nebula-cert-"
   # Static host map: maps VPN IPs to real addresses for lighthouse discovery
   staticHostMap: {}
     # "10.42.0.1": "lighthouse.disentangle.network:4242"

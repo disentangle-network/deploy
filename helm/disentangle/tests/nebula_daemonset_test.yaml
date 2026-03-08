@@ -206,3 +206,127 @@ tests:
       - lengthEqual:
           path: spec.template.spec.volumes
           count: 4
+
+  # --- certMount.mode=shared (explicit) tests ---
+
+  - it: should behave identically when certMount.mode is explicitly shared
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "shared"
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+      - lengthEqual:
+          path: spec.template.spec.volumes
+          count: 4
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: selected-certs
+            emptyDir:
+              medium: Memory
+              sizeLimit: 1Mi
+
+  # --- certMount.mode=perNode tests ---
+
+  - it: perNode mode should not have initContainers
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "perNode"
+    asserts:
+      - isNull:
+          path: spec.template.spec.initContainers
+
+  - it: perNode mode should have three volumes (no all-certs)
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "perNode"
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.volumes
+          count: 3
+
+  - it: perNode mode selected-certs volume should be a Secret (not emptyDir)
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "perNode"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: selected-certs
+            secret:
+              secretName: nebula-cert-test-release-disentangle
+
+  - it: perNode mode should derive secretName from prefix + fullname by default
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "perNode"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: selected-certs
+            secret:
+              secretName: nebula-cert-test-release-disentangle
+
+  - it: perNode mode should use custom secretName when set
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "perNode"
+      nebula.certMount.secretName: "my-custom-nebula-secret"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: selected-certs
+            secret:
+              secretName: my-custom-nebula-secret
+
+  - it: perNode mode should use custom secretPrefix when secretName is empty
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "perNode"
+      nebula.certMount.secretPrefix: "overlay-cert-"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: selected-certs
+            secret:
+              secretName: overlay-cert-test-release-disentangle
+
+  - it: perNode mode should preserve the same volumeMounts on the main container
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "perNode"
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].volumeMounts
+          count: 3
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: selected-certs
+            mountPath: /etc/nebula/certs
+            readOnly: true
+
+  - it: perNode mode should still have nebula-config and tun volumes
+    set:
+      nebula.enabled: true
+      nebula.certMount.mode: "perNode"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nebula-config
+            configMap:
+              name: test-release-disentangle-nebula-config
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tun
+            hostPath:
+              path: /dev/net/tun
+              type: CharDevice
