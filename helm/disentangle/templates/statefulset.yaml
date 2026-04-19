@@ -29,13 +29,17 @@ spec:
           - -c
           - |
             ORDINAL=${HOSTNAME##*-}
+            EXTRA_PEERS=""
+            {{- range .Values.nodes.bootstrapPeers }}
+            EXTRA_PEERS="${EXTRA_PEERS} {{ . }}"
+            {{- end }}
             if [ "$ORDINAL" = "0" ]; then
-              # Bootstrap node (node-0) - no bootstrap peer
-              exec disentangle-node {{ .Values.nodes.p2pPort }} {{ .Values.nodes.rpcPort }}
+              # Bootstrap node (node-0) - only external bootstrap peers
+              exec disentangle-node {{ .Values.nodes.p2pPort }} {{ .Values.nodes.rpcPort }} ${EXTRA_PEERS}
             else
-              # Follower nodes - connect to node-0
+              # Follower nodes - connect to node-0 + any external peers
               BOOTSTRAP="{{ include "disentangle.fullname" . }}-0.{{ include "disentangle.fullname" . }}-headless.{{ .Release.Namespace }}.svc.cluster.local"
-              exec disentangle-node {{ .Values.nodes.p2pPort }} {{ .Values.nodes.rpcPort }} /dns4/${BOOTSTRAP}/tcp/{{ .Values.nodes.p2pPort }}
+              exec disentangle-node {{ .Values.nodes.p2pPort }} {{ .Values.nodes.rpcPort }} /dns4/${BOOTSTRAP}/tcp/{{ .Values.nodes.p2pPort }} ${EXTRA_PEERS}
             fi
         ports:
         - name: p2p

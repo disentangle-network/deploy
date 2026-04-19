@@ -18,6 +18,10 @@ nodes:
   count: 5           # Number of nodes in the network
   p2pPort: 9000     # P2P communication port
   rpcPort: 8000     # HTTP RPC port
+  # External bootstrap peers (multiaddr strings for cross-cluster discovery)
+  bootstrapPeers: []
+    # - "/ip4/10.42.1.100/tcp/9000/p2p/<peerID>"
+    # - "/dns4/remote-node.example.com/tcp/9000/p2p/<peerID>"
 
 # Persistent storage for node state
 persistence:
